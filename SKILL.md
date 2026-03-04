@@ -11,7 +11,20 @@ This skill is for everyone: developers who've never studied design, and designer
 
 ---
 
-## Step 0: Beginner Check (Always Do This First)
+## Step 0: Language & Beginner Check (Always Do This First)
+
+### Language Detection
+Detect the language of the user's message and respond entirely in that language throughout the audit — including all issue labels, explanations, fix suggestions, and the final report. If the user writes in Korean, the full audit report must be in Korean. If in English, respond in English. Never mix languages in a single report.
+
+**Korean response note:** When auditing in Korean, use natural Korean UX/design terminology:
+- 타이포그래피 (typography), 색상 대비 (color contrast), 간격 (spacing)
+- 접근성 (accessibility), 시각적 계층 (visual hierarchy), 일관성 (consistency)
+- 🔴 심각한 문제 / 🟡 경고 / 🟢 팁
+- Overall score label: **디자인 감사 보고서** / 총점: X/100
+
+---
+
+## Step 0: Beginner Check
 
 Before anything else, gauge the user's familiarity with design from their message.
 
