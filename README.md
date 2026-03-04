@@ -1,14 +1,14 @@
 # 🎨 Design Auditor — Claude Skill
 
-A Claude skill that audits designs against **13 professional design rules** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
+A Claude skill that audits designs against **17 professional design rules** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
 
-Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, and written descriptions.
+Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, and written descriptions. Supports **English and Korean**.
 
 ---
 
 ## What It Does
 
-Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor checks your work against 13 categories of design rules and gives you:
+Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor checks your work against 17 categories of design rules and gives you:
 
 - A **score out of 100**
 - Issues ranked by severity (🔴 Critical / 🟡 Warning / 🟢 Tip)
@@ -18,7 +18,7 @@ Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor 
 
 ---
 
-## The 13 Audit Categories
+## The 17 Audit Categories
 
 | # | Category | What It Checks |
 |---|---|---|
@@ -35,6 +35,11 @@ Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor 
 | 11 | **Loading, Empty & Error States** | Skeletons, empty state anatomy, error levels, success confirmation |
 | 12 | **Content & Microcopy** | Button labels, error messages, tone consistency, terminology |
 | 13 | **Internationalization & RTL** | Text expansion, RTL mirroring, locale-aware formatting, font support |
+| 14 | **Corner Radius** | Nested radius rule, radius scale, pill shapes, contextual radius |
+| 15 | **Elevation & Shadows** | Shadow scale, elevation hierarchy, dark mode depth |
+| 16 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
+| 17 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
+| 18 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
 
 ---
 
@@ -60,15 +65,25 @@ Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor 
 
 Once installed, just talk to Claude naturally:
 
+**English:**
 ```
 "Check my design" → full audit
-"Is this accessible?" → accessibility-focused audit  
+"Is this accessible?" → accessibility-focused audit
 "Review my form" → forms & microcopy audit
 "Does this follow WCAG?" → contrast & a11y audit
 "Check my Figma file: [link]" → Figma MCP audit
 ```
 
-Paste a Figma URL, share a screenshot, or paste your HTML/CSS — Claude will run the audit automatically.
+**Korean:**
+```
+"디자인 검토해줘" → 전체 감사
+"접근성 확인해줘" → 접근성 중심 감사
+"내 디자인 괜찮아 보여?" → 전체 감사
+"UI 검토해줘" → 전체 감사
+"색상 대비 확인해줘" → 색상 및 접근성 감사
+```
+
+Paste a Figma URL, share a screenshot, or paste your HTML/CSS — Claude will run the audit automatically and respond in the same language you used.
 
 ---
 
@@ -78,17 +93,17 @@ Paste a Figma URL, share a screenshot, or paste your HTML/CSS — Claude will ru
 ## Design Audit Report
 
 ### Overall Score: 68/100
-Solid structure with good layout instincts, but critical contrast 
+Solid structure with good layout instincts, but critical contrast
 failures and missing form labels need to be fixed before shipping.
 
 ### 🔴 Critical Issues
-- **Body text contrast**: #aaa on white = 2.3:1 ratio → Fix: use #595959 
+- **Body text contrast**: #aaa on white = 2.3:1 ratio → Fix: use #595959
   (7:1) → Why: many users literally can't read low-contrast text.
-- **Missing form labels**: Placeholder-only inputs lose their label 
+- **Missing form labels**: Placeholder-only inputs lose their label
   when typing → Fix: add <label> above each input.
 
 ### 🟡 Warnings
-- **Off-grid spacing**: padding: 13px, gap: 14px → Fix: use multiples 
+- **Off-grid spacing**: padding: 13px, gap: 14px → Fix: use multiples
   of 8 (8, 16, 24px) → Why: arbitrary values create subtle visual jitter.
 
 ### ✅ What's Working Well
@@ -107,16 +122,37 @@ failures and missing form labels need to be fixed before shipping.
 
 ```
 design-auditor/
-├── SKILL.md                        — Main skill instructions (13 categories)
+├── SKILL.md                        — Main skill instructions (17 categories)
 └── references/
     ├── typography.md               — Font rules, sizing, hierarchy
     ├── color.md                    — WCAG contrast, palette guidance
     ├── spacing.md                  — 8-point grid, layout, proximity
+    ├── corner-radius.md            — Nested radius rule, scale, pill shapes
+    ├── elevation.md                — Shadow scale, elevation hierarchy
+    ├── iconography.md              — Icon families, sizing, touch targets
+    ├── navigation.md               — Tabs, breadcrumbs, back buttons, mobile nav
+    ├── tokens.md                   — Design tokens, semantic naming, dark mode
     ├── figma-mcp.md                — Figma MCP workflow & safe editing
     ├── states.md                   — Loading, empty, error, success states
     ├── microcopy.md                — Button labels, errors, tone, terminology
     └── i18n.md                     — RTL support, locale formatting, i18n
 ```
+
+---
+
+## Changelog
+
+### v1.1.1
+- Added Korean language support — skill detects Korean input and responds with full audit report in Korean
+- Korean trigger phrases: 디자인 검토, UI 검토, 접근성 확인, 색상 대비 and more
+
+### v1.1.0
+- Added 4 new audit categories: Corner Radius, Elevation & Shadows, Iconography, Navigation Patterns, Design Tokens
+- Added 5 new reference files
+- Total: 17 categories, 14 reference files
+
+### v1.0.0
+- Initial release with 13 audit categories and 7 reference files
 
 ---
 
