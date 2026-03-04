@@ -121,10 +121,16 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 ---
 
 ### CATEGORY 5: Consistency
+*Corner radius full rules → `references/corner-radius.md`*
 
 - [ ] **Component reuse** — Buttons, inputs, cards identical throughout. No one-off styles.
 - [ ] **Icon family** — All icons from the same set (same style, same stroke weight).
-- [ ] **Corner radius** — Consistent rounding unless deliberately varied.
+- [ ] **Corner radius scale** — Radii should come from a fixed set (e.g. 4, 8, 12, 16, 24px, full). Arbitrary values (7px, 11px) look accidental.
+- [ ] **Nested radius rule** — When an element sits inside another, outer radius = inner radius + padding. If the inner element has 8px radius and 12px padding, the outer must be ~20px. Mismatched nesting makes corners look "poking out."
+- [ ] **Size-proportional radius** — Larger elements need larger radii. A small badge with 12px radius looks right. A large modal with 4px radius looks barely rounded.
+- [ ] **Pill shapes are intentional** — border-radius ≥ 50% of height creates a pill. Should be deliberate (tags, toggles, badges) not accidental.
+- [ ] **Zero radius is a choice** — Sharp corners (0px) should be a design language decision, not a forgotten default.
+- [ ] **Contextual radius** — Modals/sheets anchored to screen edges should have rounded top corners, square bottom. Floating elements fully rounded.
 - [ ] **Interaction states** — Hover, active, disabled states all visually distinct.
 
 ---
@@ -225,6 +231,61 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 
 ---
 
+
+### CATEGORY 14: Elevation & Shadows
+*Full rules → `references/elevation.md`*
+
+- [ ] **Shadow scale** — Shadows should come from a defined scale (e.g. sm, md, lg, xl) — not arbitrary values. Each level should be used consistently for the same type of element.
+- [ ] **Shadow = elevation** — Shadows communicate how high above the page an element floats. Cards sit low (subtle shadow), modals sit high (strong shadow), tooltips highest. Check the hierarchy makes sense.
+- [ ] **Shadow color** — Shadows should use a dark, slightly saturated color (e.g. `rgba(0,0,0,0.08)`) — never pure black. On colored backgrounds, tint the shadow with the surface color.
+- [ ] **No shadows in dark mode** — Shadows are invisible on dark backgrounds. Use lighter surface colors for elevation instead (e.g. a card is slightly lighter gray than the page background).
+- [ ] **No decorative shadows** — Shadows should only appear on elevated elements. Don't use shadows purely for decoration or emphasis on flat elements.
+- [ ] **Consistent blur & offset** — A consistent offset-to-blur ratio (e.g. offset-y = 1/3 of blur) makes shadows feel physically grounded. Mismatched values look amateur.
+- [ ] **Multiple light sources** — Don't combine a top-shadow and a bottom-shadow on the same element unless intentional. Pick one light source direction and stick to it.
+
+---
+
+### CATEGORY 15: Iconography
+*Full rules → `references/iconography.md`*
+
+- [ ] **Consistent icon family** — All icons from the same set (e.g. all Phosphor, all Lucide, all Material). Never mix outline icons from one library with filled icons from another.
+- [ ] **Consistent style within family** — Stick to one style: all outline, all filled, or all duotone. Mixing styles inside one library looks inconsistent.
+- [ ] **Optical sizing** — Icons should be sized at standard grid-friendly values: 16, 20, 24, 32, 40, 48px. Avoid 18px, 22px, 26px — they fall between optical grid lines.
+- [ ] **Stroke weight consistency** — Outline icons have a stroke weight. Don't use 1px icons next to 2px icons — they feel mismatched even when both are "outline."
+- [ ] **Touch target padding** — Icons used as interactive buttons need padding to reach 44×44px minimum. A 24px icon needs 10px padding on each side.
+- [ ] **Icon meaning consistency** — The same icon should mean the same thing everywhere. Don't use a star for both "favourite" and "rating" in the same product.
+- [ ] **Label pairing** — Icons without labels are ambiguous for non-expert users. Always pair with a visible label or tooltip. Exception: universally understood icons (✕ close, ☰ menu, ⌕ search).
+- [ ] **Optical alignment** — Icons often have invisible padding baked in. When aligning icons with text, align to optical center, not bounding box edge.
+
+---
+
+### CATEGORY 16: Navigation Patterns
+*Full rules → `references/navigation.md`*
+
+- [ ] **Clear current location** — Users should always know where they are. Active nav items must be visually distinct (color, weight, indicator bar) — not just slightly different.
+- [ ] **Tabs vs nav** — Tabs switch between views of the same content. Nav moves between different sections. Don't use tabs for top-level navigation or nav for in-page switching.
+- [ ] **Breadcrumbs for depth** — Any page more than 2 levels deep needs breadcrumbs. They should show the full path and every crumb should be clickable (except the current page).
+- [ ] **Back button behavior** — "Back" should always go to the previous screen, not the previous URL. In modals and flows, "Back" should not close the entire flow unexpectedly.
+- [ ] **Mobile navigation** — Bottom navigation bar for 3–5 primary destinations on mobile. Hamburger menu acceptable for secondary items but not primary navigation.
+- [ ] **Active state contrast** — Active/selected nav items must meet 3:1 contrast ratio against inactive items — not just a subtle color shift that's easy to miss.
+- [ ] **Overflow handling** — What happens when there are too many nav items? Tabs should scroll horizontally or collapse into a "More" dropdown. Never let them clip or wrap awkwardly.
+- [ ] **Navigation consistency** — The nav should look and behave identically on every page. Never change which items appear, their order, or their style between sections.
+
+---
+
+### CATEGORY 17: Design Tokens & Variables Health (if applicable)
+*Audit this when reviewing Figma files or codebases with a design system. Read `references/tokens.md` for full guidance.*
+
+- [ ] **Colors are tokenized** — No hardcoded hex values in components. Colors should reference a token (e.g. `color.primary.500`, `--color-brand`), not `#7c3aed` directly.
+- [ ] **Spacing is tokenized** — Spacing values reference a scale token, not arbitrary pixel values.
+- [ ] **Typography is tokenized** — Font size, weight, and line-height come from defined text style tokens, not ad-hoc values per component.
+- [ ] **Radius is tokenized** — Corner radius values reference the radius scale, not hardcoded numbers.
+- [ ] **Shadow is tokenized** — Box shadows reference elevation tokens, not custom values per element.
+- [ ] **Token naming is semantic** — Tokens should describe *purpose*, not appearance. `color.background.danger` is good. `color.red.500` used directly in a component is not — it breaks when you need to change the danger color.
+- [ ] **No magic numbers** — Any value that appears more than twice should be a token. Repeated one-off values are a sign the token system isn't being used.
+- [ ] **Dark mode uses the same tokens** — Dark mode should swap token values, not introduce new hardcoded colors. If dark mode components have their own hex values, the token system is broken.
+
+---
 ## Step 3: Score & Report
 
 Always structure output like this:
@@ -293,3 +354,8 @@ After every report, offer:
 - `references/states.md` — Loading, empty, error, success & disabled state patterns
 - `references/microcopy.md` — Button labels, error messages, tone, terminology
 - `references/i18n.md` — Internationalization, RTL layout, locale-aware formatting
+- `references/corner-radius.md` — Nested radius rule, radius scale, size-proportional rounding
+- `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth
+- `references/iconography.md` — Icon families, optical sizing, touch targets, meaning
+- `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
+- `references/tokens.md` — Design tokens, semantic naming, dark mode token swapping
