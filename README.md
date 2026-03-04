@@ -1,6 +1,6 @@
 # 🎨 Design Auditor — Claude Skill
 
-A Claude skill that audits designs against **17 professional design rules** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
+A Claude skill that audits designs against **17 professional design categories** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
 
 Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, and written descriptions. Supports **English and Korean**.
 
@@ -35,11 +35,10 @@ Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor 
 | 11 | **Loading, Empty & Error States** | Skeletons, empty state anatomy, error levels, success confirmation |
 | 12 | **Content & Microcopy** | Button labels, error messages, tone consistency, terminology |
 | 13 | **Internationalization & RTL** | Text expansion, RTL mirroring, locale-aware formatting, font support |
-| 14 | **Corner Radius** | Nested radius rule, radius scale, pill shapes, contextual radius |
-| 15 | **Elevation & Shadows** | Shadow scale, elevation hierarchy, dark mode depth |
-| 16 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
-| 17 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
-| 18 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
+| 14 | **Elevation & Shadows** | Shadow scale, elevation hierarchy, dark mode depth |
+| 15 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
+| 16 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
+| 17 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
 
 ---
 
