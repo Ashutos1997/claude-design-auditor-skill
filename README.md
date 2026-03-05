@@ -141,6 +141,16 @@ design-auditor/
 
 ## Changelog
 
+### v1.1.2
+- Deterministic scoring formula: 🔴 −8pts, 🟡 −4pts, 🟢 −1pt with visible score breakdown
+- Audit confidence level declared per report (🟢 High / 🟡 Medium / 🔴 Low)
+- Strict output template for consistent report structure every time
+- Proactive fix offer after each critical and warning issue
+- typography.md: fluid typography with clamp() examples
+- color.md: 60-30-10 color proportion rule with dark mode variant
+- spacing.md: when and how to intentionally break the 8-point grid
+- tokens.md: token health score formula (5-area, 100-point scale)
+
 ### v1.1.1
 - Added Korean language support — skill detects Korean input and responds with full audit report in Korean
 - Korean trigger phrases: 디자인 검토, UI 검토, 접근성 확인, 색상 대비 and more
