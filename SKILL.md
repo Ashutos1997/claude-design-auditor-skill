@@ -78,13 +78,30 @@ Offer to apply fixes using `perform_editing_operations`. Always target specific 
 
 ---
 
+## Step 1.5: Set Confidence Level
+
+Before running the audit, declare your confidence level based on the input type:
+
+| Input Type | Confidence | What It Means |
+|---|---|---|
+| Figma file via MCP | 🟢 High | Full layer data + screenshot. Most accurate audit. |
+| Code (HTML/CSS/React) | 🟢 High | Direct access to values. Can catch all issues. |
+| Screenshot / image | 🟡 Medium | Visual only. Can't verify exact px values or token usage. |
+| Description only | 🔴 Low | Too abstract. Ask for visuals before auditing. |
+
+Always state this at the top of the report:
+> **Audit confidence: 🟢 High** (Figma MCP — full layer data + screenshot)
+> **Audit confidence: 🟡 Medium** (Screenshot — visual audit only, exact values estimated)
+
+---
+
 ## Step 2: Run the Design Audit
 
 Check each category. Skip clearly inapplicable ones. Mark each issue:
 
-- 🔴 **Critical** — Breaks usability or accessibility. Must fix.
-- 🟡 **Warning** — Weakens the design. Should fix.
-- 🟢 **Tip** — Polish-level improvement. Nice to have.
+- 🔴 **Critical** — Breaks usability or accessibility. Must fix. **(-8 points each)**
+- 🟡 **Warning** — Weakens the design. Should fix. **(-4 points each)**
+- 🟢 **Tip** — Polish-level improvement. Nice to have. **(-1 point each)**
 
 ---
 
@@ -301,26 +318,53 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 ---
 ## Step 3: Score & Report
 
-Always structure output like this:
+### Scoring Formula
+
+Start at **100 points**. Deduct for every issue found:
+
+| Severity | Deduction | Example |
+|---|---|---|
+| 🔴 Critical | **-8 points** | No text contrast, missing form labels, broken dark mode |
+| 🟡 Warning | **-4 points** | Off-grid spacing, inconsistent radius, unused prop |
+| 🟢 Tip | **-1 point** | Deprecated attribute, minor naming improvement |
+
+**Floor is 0** — score never goes negative.
+
+Scoring bands:
+- **90–100** → Production-ready
+- **70–89** → Solid, minor fixes needed
+- **50–69** → Needs work before shipping
+- **< 50** → Foundational issues, significant rework needed
+
+**Always show the maths:**
+> Score: 100 − (3 × 🔴 8pts) − (4 × 🟡 4pts) − (2 × 🟢 1pt) = 100 − 24 − 16 − 2 = **58/100**
+
+---
+
+### Strict Output Template
+
+Always use this exact structure — no exceptions:
 
 ```
 ## Design Audit Report
 
-### Overall Score: [X/100]
-[Brief scoring rationale. E.g. "Strong foundation with a few critical accessibility gaps."]
+**Audit confidence:** [🟢 High / 🟡 Medium / 🔴 Low] ([reason])
 
-Scoring:
-90–100 → Production-ready  |  70–89 → Solid, a few fixes  |  50–69 → Needs work  |  <50 → Foundational issues
+### Overall Score: [X/100]
+[Score breakdown: 100 − (N × 🔴 8) − (N × 🟡 4) − (N × 🟢 1) = X]
+[One sentence rationale.]
 
 ---
 
-### 🔴 Critical Issues (must fix)
+### 🔴 Critical Issues (−8pts each)
 - **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
+  *Want me to fix this now? I can edit the code/Figma directly.*
 
-### 🟡 Warnings (should fix)
+### 🟡 Warnings (−4pts each)
 - **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
+  *Want me to fix this now? I can edit the code/Figma directly.*
 
-### 🟢 Tips (nice to have)
+### 🟢 Tips (−1pt each)
 - **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
 
 ---
@@ -329,7 +373,7 @@ Scoring:
 [2–3 specific genuine positives. Builds design instincts.]
 
 ### 🎯 Top 3 Priority Fixes
-1. [Highest impact]
+1. [Highest impact — most points to recover]
 2. [Second]
 3. [Third]
 ```
