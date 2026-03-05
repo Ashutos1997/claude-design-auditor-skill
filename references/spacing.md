@@ -202,3 +202,37 @@ When elements overlap, they need a clear layer hierarchy:
 5. **Overloaded screen density** — Too many things on screen at once. Consider splitting content across multiple screens or using progressive disclosure.
 6. **Missing whitespace in forms** — Fields jammed together with no breathing room between sections.
 7. **Ignoring mobile margins** — Desktop designs often use generous margins that collapse to nothing on mobile.
+
+---
+
+## When to Intentionally Break the 8-Point Grid
+
+The 8-point grid is a rule, not a law. There are legitimate cases where breaking it is the right call — but they should always be **intentional and documented**, never accidental.
+
+### Acceptable Reasons to Break the Grid
+
+**1. Optical correction**
+Sometimes mathematically correct spacing looks visually wrong. A common example: icons with built-in padding that makes them look off-center even when mathematically centered. Adjust by 1–2px to fix what the eye sees, not what the ruler says.
+
+**2. Border compensation**
+A 1px border adds to the total height/width of an element. If a button needs a 44px touch target and has a 1px border, the padding should be `(44 - 2) / 2 = 21px` — off-grid, but correct.
+
+**3. Dense data UIs**
+Tables, spreadsheets, and data grids sometimes need tighter vertical spacing (e.g. 6px or 10px row padding) to show more rows without scrolling. Acceptable when information density is the primary goal.
+
+**4. Line-height alignment**
+When aligning multi-line text with single-line text or icons, tiny spacing adjustments (1–3px) may be needed for optical baseline alignment.
+
+**5. External constraints**
+Third-party components, native platform guidelines (iOS HIG, Material Design), or specific browser rendering may impose constraints that conflict with your grid.
+
+### How to Handle Intentional Breaks
+- **Document it** — Add a comment in code: `/* 6px: optical correction for icon padding */`
+- **Keep it local** — Don't make a "6px" token. The break is specific to this context.
+- **Review it** — Off-grid values should be questioned in design reviews. If it doesn't have a reason, it's accidental.
+
+### The Key Test
+> "Can I explain why this value isn't on the grid?"
+
+If yes → intentional, acceptable.  
+If no → accidental, fix it.

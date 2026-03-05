@@ -245,3 +245,42 @@ Any hits in component files (not token definition files) are candidates for toke
 | Dark mode via per-component overrides | Remap semantic tokens at theme level |
 | Tokens defined but not used consistently | Enforce via linting (stylelint, custom ESLint rules) |
 | Spacing that doesn't follow the token scale | Replace with scale tokens, remove magic numbers |
+
+---
+
+## Token Health Score
+
+Use this formula to quickly assess the health of a token system during an audit:
+
+### How to Score
+
+Check 5 areas, each worth 20 points:
+
+| Area | 20pts (Full) | 10pts (Partial) | 0pts (Missing) |
+|---|---|---|---|
+| **Color** | All colors are tokens, semantic naming | Mix of tokens + hardcoded | Mostly hardcoded hex |
+| **Spacing** | All spacing uses scale tokens | Some tokens, some arbitrary | Mostly arbitrary px values |
+| **Typography** | Font size/weight/line-height tokenized | Partial tokenization | All hardcoded |
+| **Dark Mode** | Single theme swap, no new hex values | Some components adapt | Per-component overrides or no dark mode |
+| **Naming** | Semantic (purpose-based) naming throughout | Mix of semantic + descriptive | Descriptive or no naming convention |
+
+### Token Health Score Bands
+
+| Score | Health Level | What It Means |
+|---|---|---|
+| **90–100** | ✅ Excellent | System is production-grade, scalable, and maintainable |
+| **70–89** | 🟡 Good | Minor gaps, easy to clean up |
+| **50–69** | 🟠 Needs Work | Significant hardcoding, inconsistent adoption |
+| **< 50** | 🔴 Broken | Tokens exist in name only — no real system |
+
+### Quick Audit Command
+Run this to get a rough hardcoded value count in a codebase:
+```bash
+# Count hardcoded hex colors in component files
+grep -rE "#[0-9a-fA-F]{3,6}" src/components/ | grep -v "token\|variable\|\.tokens\." | wc -l
+
+# Count hardcoded px spacing (not in token files)
+grep -rE "(margin|padding|gap):\s*[0-9]+px" src/components/ | grep -v "var(--" | wc -l
+```
+
+A healthy codebase returns **0** for both. Every non-zero hit is a token debt item.

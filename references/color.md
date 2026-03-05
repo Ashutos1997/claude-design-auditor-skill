@@ -127,6 +127,44 @@ Dark mode ≠ just inverting colors. Rules change:
 
 ---
 
+## The 60-30-10 Rule
+
+A classic color proportion rule for balanced UI design:
+
+| Role | % of UI | What to Use |
+|---|---|---|
+| **60% — Dominant** | Background, large surfaces, whitespace | Neutral (white, light gray, dark gray) |
+| **30% — Secondary** | Cards, sidebars, nav, secondary elements | Slightly different neutral or soft brand tone |
+| **10% — Accent** | Buttons, links, highlights, CTAs | Primary brand color |
+
+### Why It Works
+- The 60% keeps the UI calm and readable
+- The 30% creates depth and separation
+- The 10% draws attention exactly where you want it — interactive elements
+
+### Common Violations
+- **Too much accent** (30%+): UI feels loud, overwhelming — everything is competing for attention
+- **Accent used decoratively**: Brand color on non-interactive elements trains users to ignore it
+- **No clear dominant neutral**: Multiple competing background colors create visual chaos
+
+### Example Application
+```
+60%: #F9FAFB (off-white page background)
+30%: #FFFFFF (white cards) + #E5E7EB (subtle borders)
+10%: #7C3AED (purple CTAs, active nav, links)
+```
+
+### Dark Mode Version
+```
+60%: #0F172A (dark navy background)
+30%: #1E293B (slightly lighter cards/panels)
+10%: #818CF8 (lighter purple — adjusted for dark bg contrast)
+```
+
+The accent color almost always needs adjusting for dark mode — the light-mode version is often too dark to pass contrast on dark backgrounds.
+
+---
+
 ## Quick Reference: Accessible Dark Text on Colored Backgrounds
 
 These text colors have been checked against common background colors:

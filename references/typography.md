@@ -135,3 +135,48 @@ In CSS: `max-width: 65ch` is a great rule for body text containers.
 5. **Low-contrast text** — The single most common accessibility failure. Always check.
 6. **Inconsistent alignment** — Some centered, some left-aligned, some right-aligned with no system = chaos.
 7. **No hierarchy** — Everything the same size = wall of text.
+
+---
+
+## Fluid Typography (clamp())
+
+Static type sizes break at breakpoints. Fluid typography scales smoothly between a minimum and maximum size based on viewport width.
+
+### How clamp() Works
+
+```css
+font-size: clamp(MIN, PREFERRED, MAX);
+```
+
+- **MIN** — smallest the text should ever be (e.g. on narrow mobile)
+- **PREFERRED** — fluid value using `vw` (viewport width) units
+- **MAX** — largest the text should ever be (e.g. on wide desktop)
+
+### Common Fluid Type Values
+
+```css
+/* Body text: 16px → 18px */
+font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+
+/* H2: 24px → 36px */
+font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+
+/* H1: 32px → 60px */
+font-size: clamp(2rem, 1.5rem + 2.5vw, 3.75rem);
+
+/* Display: 48px → 80px */
+font-size: clamp(3rem, 2rem + 5vw, 5rem);
+```
+
+### When to Use Fluid Typography
+- Headings and display text — biggest win
+- Hero sections and large callouts
+- Any text that appears at very different sizes across breakpoints
+
+### When NOT to Use It
+- Body text (usually fine staying at 16px)
+- Labels, captions, small UI text (should stay fixed and readable)
+- When you need pixel-perfect control at specific breakpoints
+
+### The Rule
+Fluid type should never drop below its minimum readable size. Always test `clamp()` values at the narrowest viewport you support.
