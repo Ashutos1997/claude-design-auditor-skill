@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-description: Audit and check designs against fundamental design rules and principles. Use this skill whenever the user wants to review, audit, validate, or improve a design — whether working with Figma files (via Figma MCP), code (HTML/CSS/React/Vue), screenshots, or written design descriptions. Trigger this skill for phrases like "check my design", "does this follow design rules", "review my UI", "audit my layout", "is this accessible", "design review", "design feedback", "check spacing", "typography check", "color contrast", "WCAG", "a11y", "accessibility check", or when a beginner says things like "I don't know if this looks right" or "does this look good?". Also trigger when the user is using Figma MCP or building UI in VS Code and asks for design guidance. This skill is especially valuable for developers and non-designers who need expert design validation without needing to know the rules themselves.
+description: Audit and check designs against fundamental design rules and principles. Use this skill whenever the user wants to review, audit, validate, or improve a design — whether working with Figma files (via Figma MCP), code (HTML/CSS/React/Vue), screenshots, or written design descriptions. Trigger this skill for phrases like "check my design", "does this follow design rules", "review my UI", "audit my layout", "is this accessible", "design review", "design feedback", "check spacing", "typography check", "color contrast", "WCAG", "a11y", "accessibility check", "pixel perfect", "UI critique", "design critique", "is this good UX", "Figma audit", "CSS check", "does this look right", "review this component", "check this layout", or when a beginner says things like "I don't know if this looks right" or "does this look good?". Also trigger when the user is using Figma MCP or building UI in VS Code and asks for design guidance. This skill is especially valuable for developers and non-designers who need expert design validation without needing to know the rules themselves.
 ---
 
 # Design Checker Skill
@@ -60,6 +60,12 @@ If nothing shared yet, ask:
 ## Figma MCP Workflow
 
 When a Figma file or URL is involved, follow these steps. Read `references/figma-mcp.md` for full details and safe editing patterns.
+
+### F0: Check MCP Availability First
+Before attempting any Figma tool call, check if Figma MCP is active by attempting `get_design_context`. If it fails or is unavailable:
+> "I can see you've shared a Figma link, but I don't have Figma MCP access in this session. Could you export a screenshot or paste the relevant CSS/component code? I can still run a full audit — I'll just note it as 🟡 Medium confidence since I won't have exact layer data."
+
+Never attempt to audit a Figma URL without MCP access — do not guess or hallucinate layer values.
 
 ### F1: Resolve the Link
 If given a Figma URL or shortlink → call `resolve_shortlink` first to get the node ID.
@@ -354,6 +360,15 @@ Always use this exact structure — no exceptions:
 [Score breakdown: 100 − (N × 🔴 8) − (N × 🟡 4) − (N × 🟢 1) = X]
 [One sentence rationale.]
 
+### Score by Category
+| Category | Score | Issues |
+|---|---|---|
+| Typography | X/10 | 1 🔴, 0 🟡 |
+| Color & Contrast | X/10 | 0 🔴, 2 🟡 |
+| Spacing & Layout | X/10 | ... |
+| [other relevant categories] | X/10 | ... |
+*(Only include categories that were audited)*
+
 ---
 
 ### 🔴 Critical Issues (−8pts each)
@@ -378,6 +393,12 @@ Always use this exact structure — no exceptions:
 3. [Third]
 ```
 
+### Re-audit: History Awareness
+If the user has been audited before in this session or mentions a previous audit, open with a delta summary:
+> "Since the last audit: score improved from [X] → [Y]. 🔴 issues down from [N] to [N]. Here's what's new..."
+
+Then show only the changed/new issues — don't re-list resolved ones. Acknowledge wins explicitly.
+
 ---
 
 ## Step 4: Offer to Fix
@@ -387,7 +408,16 @@ After every report, offer:
 > "Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."
 
 **In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.  
-**In code**: Edit CSS/JSX/HTML directly, show before/after diff.  
+**In code**: Always show a before/after diff when fixing:
+```
+// BEFORE
+padding: 13px 22px;
+color: #aaa;
+
+// AFTER
+padding: 12px 24px;  /* 8pt grid */
+color: #666;          /* 4.5:1 contrast on white */
+```
 **Teaching mode**: Walk through the fix step by step instead of doing it for them.
 
 ---
