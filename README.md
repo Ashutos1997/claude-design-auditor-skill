@@ -143,6 +143,13 @@ design-auditor/
 
 ## Changelog
 
+### v1.1.3
+- Figma MCP fallback: if Figma MCP is unavailable, skill now asks for a screenshot or code instead of failing silently
+- Per-category scores added to every report (e.g. Typography: 8/10, Color: 6/10)
+- Before/After code diffs shown when fixing issues — see exactly what changed and why
+- Re-audit delta mode: when auditing an updated design, shows score change and which issues were resolved since last audit
+- Expanded trigger keywords: "pixel perfect", "UI critique", "Figma audit", "CSS check", "review this component" and more
+
 ### v1.1.2
 - Deterministic scoring formula: 🔴 Critical = −8pts, 🟡 Warning = −4pts, 🟢 Tip = −1pt — score breakdown shown in every report
 - Audit confidence level declared per report (🟢 High / 🟡 Medium / 🔴 Low)
