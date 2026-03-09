@@ -52,8 +52,35 @@ Then **explain every term you use** inline (e.g., if you say "visual hierarchy",
 | **Screenshot or image** | Examine the attached image |
 | **Description only** | Ask for visuals — descriptions miss too much |
 
-If nothing shared yet, ask:
-> "Could you share a Figma link, paste your code, or upload a screenshot? I need to see the design to audit it properly."
+If nothing shared yet, use ask_user_input:
+- question: "What are you sharing for the audit?"
+- type: single_select
+- options: "Figma link" / "Screenshot" / "Code (HTML/CSS/React)" / "Written description"
+
+### Step 1b: Audit Scope
+Once the design is received, present a scope widget using ask_user_input:
+
+- question: "What kind of audit do you want?"
+- type: single_select
+- options:
+  - "Full audit — all 17 categories"
+  - "Quick audit — top 5 (typography, color, spacing, hierarchy, accessibility)"
+  - "Custom — I'll pick the categories"
+
+**If "Quick audit"** → only run Categories 1, 2, 3, 4, 6. State at top of report: "Quick audit — 5 of 17 categories checked."
+
+**If "Custom"** → present a second widget:
+- question: "Which categories would you like audited?"
+- type: multi_select
+- options: "Typography" / "Color & Contrast" / "Spacing & Layout" / "Visual Hierarchy" / "Consistency" / "Accessibility" / "Responsiveness" / "States" / "Microcopy" / "i18n & RTL" / "Corner Radius" / "Elevation & Shadows" / "Iconography" / "Navigation" / "Design Tokens"
+
+**If "Full audit"** → run all 17 categories as normal.
+
+### Partial Audit Mode (auto-detected)
+If the user shares a single isolated component (e.g. a button, a card, an input field), automatically skip categories that are not applicable and declare which were skipped:
+- Skip: Navigation Patterns, i18n & RTL, Responsiveness (unless clearly a responsive layout)
+- Keep: Typography, Color, Spacing, Iconography, Accessibility, States, Microcopy, Design Tokens, Corner Radius, Elevation
+- State at top of report: "Partial audit — [N] of 17 categories applicable to this component. Skipped: [list]."
 
 ---
 
@@ -392,6 +419,15 @@ Always use this exact structure — no exceptions:
 2. [Second]
 3. [Third]
 ```
+
+### Severity Filter
+After presenting the report, offer a filter widget using ask_user_input if there are 5+ issues:
+
+- question: "Would you like to filter the issues?"
+- type: single_select
+- options: "Show only 🔴 Critical" / "Show 🔴 Critical + 🟡 Warnings" / "Show everything" / "No filter, keep as is"
+
+Apply the filter and re-present only the relevant issue sections. Score and category breakdown always remain visible regardless of filter.
 
 ### Re-audit: History Awareness
 If the user has been audited before in this session or mentions a previous audit, open with a delta summary:
