@@ -12,11 +12,13 @@ Compatible with **Claude**, **Manus**, and other agents that support SKILL.md-ba
 
 Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor checks your work against 17 categories of design rules and gives you:
 
-- A **score out of 100**
+- A **score out of 100** with per-category breakdown
 - Issues ranked by severity (🔴 Critical / 🟡 Warning / 🟢 Tip)
 - **Plain-language explanations** of *why* each rule matters
 - A **top 3 priority fix list**
+- Before/after code diffs when fixing issues
 - An offer to fix issues directly in your code or Figma file
+- **Export report as Markdown** — ready for Notion, GitHub, Linear, or Jira
 
 ---
 
@@ -68,9 +70,9 @@ Once installed, just talk to Claude naturally:
 
 **English:**
 ```
-"Check my design" → full audit
+"Check my design" → choose scope (full / quick / custom), then audit
 "Is this accessible?" → accessibility-focused audit
-"Review my form" → forms & microcopy audit
+"Review my form" → partial audit, relevant categories only
 "Does this follow WCAG?" → contrast & a11y audit
 "Check my Figma file: [link]" → Figma MCP audit
 ```
@@ -154,6 +156,8 @@ design-auditor/
 - Per-category scores added to every report (e.g. Typography: 8/10, Color: 6/10)
 - Before/After code diffs shown when fixing issues — see exactly what changed and why
 - Re-audit delta mode: when auditing an updated design, shows score change and which issues were resolved since last audit
+- Post-report "What next?" widget with fix, explain, re-audit, and export options
+- Ambiguous input widget when no design is shared upfront
 - Expanded trigger keywords: "pixel perfect", "UI critique", "Figma audit", "CSS check", "review this component" and more
 
 ### v1.1.2
