@@ -149,6 +149,8 @@ design-auditor/
 - Before/After code diffs shown when fixing issues — see exactly what changed and why
 - Re-audit delta mode: when auditing an updated design, shows score change and which issues were resolved since last audit
 - Expanded trigger keywords: "pixel perfect", "UI critique", "Figma audit", "CSS check", "review this component" and more
+- Post-report "What next?" widget with fix, explain, re-audit, and export options
+- Ambiguous input widget when no design is shared upfront
 
 ### v1.1.2
 - Deterministic scoring formula: 🔴 Critical = −8pts, 🟡 Warning = −4pts, 🟢 Tip = −1pt — score breakdown shown in every report
