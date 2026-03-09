@@ -403,9 +403,22 @@ Then show only the changed/new issues — don't re-list resolved ones. Acknowled
 
 ## Step 4: Offer to Fix
 
-After every report, offer:
+After every report, present a **"What next?" widget** using the ask_user_input tool with these options:
+
+- question: "What would you like to do next?"
+- type: multi_select
+- options: "Fix all Critical issues" / "Fix a specific issue" / "Explain an issue in more detail" / "Re-audit after my changes" / "Export report as text"
+
+Then respond based on their selection. If they dismiss the widget, fall back to:
 
 > "Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."
+
+### Ambiguous Input Widget
+If the user triggers the skill but shares nothing (e.g. just says "audit this" with no attachment), use ask_user_input before asking in prose:
+
+- question: "What are you sharing for the audit?"
+- type: single_select
+- options: "Figma link" / "Screenshot" / "Code (HTML/CSS/React)" / "Written description"
 
 **In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.  
 **In code**: Always show a before/after diff when fixing:
