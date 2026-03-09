@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-description: Audit and check designs against fundamental design rules and principles. Use this skill whenever the user wants to review, audit, validate, or improve a design — whether working with Figma files (via Figma MCP), code (HTML/CSS/React/Vue), screenshots, or written design descriptions. Trigger for: "check my design", "review my UI", "audit my layout", "is this accessible", "design review", "design feedback", "check spacing", "typography check", "color contrast", "WCAG", "a11y", "pixel perfect", "UI critique", "Figma audit", "CSS check", "review this component", or when a beginner says "does this look good?". Also trigger when building UI in VS Code or using Figma MCP. Especially valuable for developers and non-designers who need expert design validation.
+description: "Audit designs against 17 professional rules. Use when the user wants to review, audit, validate, or improve a design using Figma MCP, code (HTML/CSS/React/Vue), screenshots, or written descriptions. Triggers on phrases like check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP. Valuable for developers and non-designers who need expert design validation."
 ---
 
 # Design Checker Skill
