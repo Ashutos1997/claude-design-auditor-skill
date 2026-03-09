@@ -143,6 +143,12 @@ design-auditor/
 
 ## Changelog
 
+### v1.1.4
+- Audit scope selector: choose Full (17 categories), Quick (top 5), or Custom (pick your own) before every audit
+- Partial audit mode: single components auto-detected — irrelevant categories skipped and declared upfront
+- Severity filter widget: after reports with 5+ issues, filter to show only 🔴 / 🔴+🟡 / everything
+- Export as Markdown: "Export report as text" now outputs a clean copy-pastable block for Notion, GitHub, Linear, or Jira
+
 ### v1.1.3
 - Figma MCP fallback: if Figma MCP is unavailable, skill now asks for a screenshot or code instead of failing silently
 - Per-category scores added to every report (e.g. Typography: 8/10, Color: 6/10)
