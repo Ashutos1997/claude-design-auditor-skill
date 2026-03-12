@@ -145,6 +145,15 @@ design-auditor/
 
 ## Changelog
 
+### v1.1.5
+- Figma Variables integration: `get_variable_defs` now called on every Figma audit — Category 17 (Design Tokens) shows real token coverage % (e.g. "4 of 7 colors tokenized — 57%")
+- Audit goal context: choose design stage (Early concept / Dev handoff / Production) — severity thresholds adjust accordingly
+- WCAG level selector: choose AA (standard) or AAA (enhanced) before every audit — contrast thresholds applied correctly per level
+- Separate Accessibility Score out of 100 shown alongside overall score, covering Categories 2, 6, 7, and 16
+- Developer handoff report mode: terse output with node IDs and exact values, no educational context — optimised for sharing with devs
+- "Fix all Critical" loop: per-issue confirmation (Yes / Skip / Stop) instead of batch-applying all fixes at once
+- Bilingual widget labels: all ask_user_input options now show English / 한국어 side by side for full Korean UX consistency
+
 ### v1.1.4
 - Audit scope selector: choose Full (17 categories), Quick (top 5), or Custom (pick your own) before every audit
 - Partial audit mode: single components auto-detected — irrelevant categories skipped and declared upfront
