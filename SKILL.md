@@ -77,8 +77,9 @@ Before presenting any widget, infer as much as possible from what was submitted.
 **Infer WCAG level:**
 - Always default to AA. Only ask if the user explicitly mentions AAA, government/legal context, or "enhanced accessibility."
 
-**Only ask questions when inference fails.** If all three can be inferred, skip all widgets and go straight to the audit. State inferred values at the top of the report:
-> **Inferred: Full audit · Dev handoff · WCAG AA** — let me know if any of these are wrong.
+**Only ask questions when inference fails.** If all three can be inferred, skip all widgets and go straight to the audit. State inferred values at the top of the report in the user's detected language:
+- English: *"Inferred: Full audit · Dev handoff · WCAG AA — let me know if any of these are wrong."*
+- Korean: *"추론된 설정: 전체 감사 · 개발 전달 · WCAG AA — 잘못된 항목이 있으면 알려주세요."*
 
 **If scope is still ambiguous after inference**, ask one combined widget — not three separate ones:
 - question: "A few quick settings before I start:"
@@ -97,7 +98,9 @@ Before presenting any widget, infer as much as possible from what was submitted.
 | Figma file | Color & Contrast, Design Tokens, Accessibility, Spacing & Layout, Consistency |
 | Code file | Accessibility, Design Tokens, States, Color & Contrast, Typography |
 
-State at top of report: "Quick audit — 5 categories selected for your [type]. Run a full audit to check all 17."
+State at top of report in the user's detected language:
+- English: *"Quick audit — 5 categories selected for your [type]. Run a full audit to check all 17."*
+- Korean: *"빠른 감사 — [유형]에 맞는 5개 카테고리를 선택했습니다. 전체 17개 항목을 확인하려면 전체 감사를 실행하세요."*
 
 **Severity thresholds by stage** (apply silently based on inferred or selected stage):
 
@@ -131,8 +134,9 @@ Identify what type of UI was submitted and weight categories accordingly. Never 
 | **Dashboard** | Data viz, metrics, tables, filters | Visual Hierarchy, Consistency, Typography, Color, Responsiveness | Motion, i18n |
 | **Single component** | Button, input, badge, avatar alone | Typography, Color, Spacing, Accessibility, States, Corner Radius, Elevation | Navigation, i18n, Responsiveness |
 
-Always state detected type and skipped categories at the top of the report:
-> **Detected: Form** — auditing 12 of 17 categories. Skipped: i18n & RTL, Navigation, Responsiveness, Motion, Design Tokens (no code provided).
+Always state detected type and skipped categories at the top of the report in the user's detected language:
+- English: *"Detected: Form — auditing 12 of 17 categories. Skipped: i18n & RTL, Navigation, Responsiveness, Motion, Design Tokens (no code provided)."*
+- Korean: *"감지된 유형: 폼 — 17개 카테고리 중 12개를 감사합니다. 건너뜀: 국제화 및 RTL, 내비게이션, 반응형, 모션, 디자인 토큰 (코드 없음)."*
 
 ---
 
@@ -141,8 +145,9 @@ Always state detected type and skipped categories at the top of the report:
 When a Figma file or URL is involved, follow these steps. Read `references/figma-mcp.md` for full details and safe editing patterns.
 
 ### F0: Check MCP Availability First
-Before attempting any Figma tool call, check if Figma MCP is active by attempting `get_design_context`. If it fails or is unavailable:
-> "I can see you've shared a Figma link, but I don't have Figma MCP access in this session. Could you export a screenshot or paste the relevant CSS/component code? I can still run a full audit — I'll just note it as 🟡 Medium confidence since I won't have exact layer data."
+Before attempting any Figma tool call, check if Figma MCP is active by attempting `get_design_context`. If it fails or is unavailable, respond in the user's detected language:
+- English: *"I can see you've shared a Figma link, but I don't have Figma MCP access in this session. Could you export a screenshot or paste the relevant CSS/component code? I can still run a full audit — I'll just note it as 🟡 Medium confidence since I won't have exact layer data."*
+- Korean: *"Figma 링크를 공유해 주셨지만, 이 세션에서는 Figma MCP 접근 권한이 없습니다. 스크린샷을 내보내거나 관련 CSS/컴포넌트 코드를 붙여넣어 주시겠어요? 전체 감사는 진행할 수 있지만, 정확한 레이어 데이터가 없으므로 🟡 중간 신뢰도로 표시됩니다."*
 
 Never attempt to audit a Figma URL without MCP access — do not guess or hallucinate layer values.
 
@@ -185,8 +190,9 @@ Declare confidence based on input type, then **change audit behaviour accordingl
 - Flag every estimated value: > "Spacing appears to be ~12px (estimated from visual)"
 - Do not cite exact hex values — describe color relationship instead: > "Text appears low contrast against the background — likely below 4.5:1"
 - Skip categories that are impossible to assess visually: Design Tokens, exact Typography metrics
-- Add a banner at the top of the report:
-  > ⚠️ **Medium confidence audit** — input was a screenshot. Values are estimated from visual inspection. For an exact audit, share the Figma file or component code.
+- Add a banner at the top of the report in the user's detected language:
+  - English: *⚠️ **Medium confidence audit** — input was a screenshot. Values are estimated from visual inspection. For an exact audit, share the Figma file or component code.*
+  - Korean: *⚠️ **중간 신뢰도 감사** — 스크린샷을 기반으로 했습니다. 값은 시각적 검토에 의해 추정되었습니다. 정확한 감사를 위해 Figma 파일 또는 컴포넌트 코드를 공유해 주세요.*
 - Apply a **−50% deduction modifier** to all 🟡 Warning and 🟢 Tip issues that depend on exact values. Only 🔴 Critical visual issues (clear contrast failures, missing states visible in screenshot) take full deductions.
 
 **At 🟢 High confidence (Figma or code):**
@@ -217,7 +223,9 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Text contrast** — WCAG AA: 4.5:1 for normal text, 3:1 for large text (18px+).
 - [ ] **Alignment** — Don't randomly mix left-aligned and center-aligned body text.
 
-**→ Widget trigger:** If any typography issue is found, use the Visualizer to render the **Type Scale Stack** widget. Pass the detected font sizes and their roles (h1, h2, body, caption etc.) as data. Renders each size at actual scale, flags duplicate sizes, ratios too close to distinguish, and body text below minimum. Introduce with: *"Here's how your type scale stacks up visually."*
+**→ Widget trigger:** If any typography issue is found, use the Visualizer to render the **Type Scale Stack** widget. Pass the detected font sizes and their roles (h1, h2, body, caption etc.) as data. Renders each size at actual scale, flags duplicate sizes, ratios too close to distinguish, and body text below minimum. Introduce with one sentence in the user's detected language:
+- English: *"Here's how your type scale stacks up visually."*
+- Korean: *"타입 스케일을 시각적으로 확인해 보세요."*
 
 ---
 
@@ -230,7 +238,9 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Color consistency** — Same color = same meaning everywhere.
 - [ ] **Low-contrast combos** — Light gray on white, yellow on white, white on light blue all commonly fail.
 
-**→ Widget trigger:** If any contrast issue is found, use the Visualizer to render the **Contrast Checker** widget. Pre-populate the foreground and background hex values from the failing pair identified in the audit. The widget shows all 5 WCAG pass/fail levels live, a real text preview at heading/body/label sizes, and automatically calculates the nearest passing hex value as a fix suggestion. Introduce with: *"Use this to test fixes — the widget calculates the exact color adjustment needed."*
+**→ Widget trigger:** If any contrast issue is found, use the Visualizer to render the **Contrast Checker** widget. Pre-populate the foreground and background hex values from the failing pair identified in the audit. The widget shows all 5 WCAG pass/fail levels live, a real text preview at heading/body/label sizes, and automatically calculates the nearest passing hex value as a fix suggestion. Introduce with one sentence in the user's detected language:
+- English: *"Use this to test fixes — the widget calculates the exact color adjustment needed."*
+- Korean: *"이 도구로 수정 사항을 바로 테스트해 보세요 — 통과 가능한 정확한 색상값을 자동으로 계산해 드립니다."*
 
 ---
 
@@ -244,7 +254,9 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Alignment** — Elements align to a shared edge or center.
 - [ ] **Content margins** — Consistent left/right margins, not edge-to-edge.
 
-**→ Widget trigger:** If any off-grid spacing value is found, use the Visualizer to render the **8pt Grid Visualizer** widget. Pre-populate the input with the first offending value found. The widget shows the value on a ruler alongside valid grid neighbours, calculates the snap distance, and pre-colors all common spacing values as on/off-grid. Introduce with: *"Here's where that value sits on the grid and what to snap it to."*
+**→ Widget trigger:** If any off-grid spacing value is found, use the Visualizer to render the **8pt Grid Visualizer** widget. Pre-populate the input with the first offending value found. The widget shows the value on a ruler alongside valid grid neighbours, calculates the snap distance, and pre-colors all common spacing values as on/off-grid. Introduce with one sentence in the user's detected language:
+- English: *"Here's where that value sits on the grid and what to snap it to."*
+- Korean: *"해당 값이 그리드에서 어디에 위치하는지, 어디로 맞춰야 하는지 확인해 보세요."*
 
 ---
 
@@ -338,7 +350,9 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Disabled state** — Disabled buttons and inputs should look visually distinct (reduced opacity, no pointer cursor) and ideally explain why they're disabled.
 - [ ] **Consistency** — Loading/empty/error states should match the overall visual style — not be plain browser defaults or unstyled fallbacks.
 
-**→ Widget trigger:** If any missing state is found, always render the **States Coverage Map** widget — even for a single missing state. Pre-populate the grid with the components identified in the audit and mark states as present, missing, or N/A based on what was observed. Mark cells as N/A only when a state genuinely cannot apply to that component (e.g. "Empty" on a Button). Introduce with: *"Here's the full picture of which states are designed and which are missing."*
+**→ Widget trigger:** If any missing state is found, always render the **States Coverage Map** widget — even for a single missing state. Pre-populate the grid with the components identified in the audit and mark states as present, missing, or N/A based on what was observed. Mark cells as N/A only when a state genuinely cannot apply to that component (e.g. "Empty" on a Button). Introduce with one sentence in the user's detected language:
+- English: *"Here's the full picture of which states are designed and which are missing."*
+- Korean: *"어떤 상태가 디자인되어 있고 어떤 상태가 빠져 있는지 전체 현황을 확인해 보세요."*
 
 ---
 
@@ -516,7 +530,9 @@ After listing all issues, use the Visualizer to render the **Issue Priority Matr
 - 3–5: Polish-level improvement (minor Warnings, Tips)
 - 1–2: Cosmetic only
 
-Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Introduce with: *"Here's every issue mapped by how hard it is to fix versus how much it will improve the design — start in the top-left."*
+Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Introduce with one sentence in the user's detected language:
+- English: *"Here's every issue mapped by how hard it is to fix versus how much it will improve the design — start in the top-left."*
+- Korean: *"발견된 모든 문제를 수정 난이도와 개선 효과 기준으로 매핑했습니다 — 왼쪽 위부터 시작하세요."*
 ```
 
 ### Step 3b: Radar Chart Visualizer (always run after report)
@@ -539,8 +555,9 @@ Store the current overall score in a JS variable accessible to the widget. If a 
 - Score dropped: `−N ↓` in red  
 - No change: omit the badge
 
-**Tone:** Introduce the chart with one short sentence before the Visualizer call, e.g.:
-> "Here's a visual breakdown of how your design scores across each category — red spots are your highest-priority fixes."
+**Tone:** Introduce the chart with one short sentence in the user's detected language before the Visualizer call:
+- English: *"Here's a visual breakdown of how your design scores across each category — red spots are your highest-priority fixes."*
+- Korean: *"각 카테고리별 디자인 점수를 시각적으로 확인해 보세요 — 빨간 영역이 가장 우선적으로 수정해야 할 부분입니다."*
 
 ---
 
@@ -561,11 +578,13 @@ Maintain a running audit history across the session. Every time an audit complet
 - Count of 🔴 critical / 🟡 warning / 🟢 tip issues
 - Timestamp label (e.g. "Audit 1", "Audit 2")
 
-**On re-audit**, open with a delta summary before the report:
-> "Since the last audit: score improved from [X] → [Y]. 🔴 issues down from [N] to [N]. Here's what's new..."
+**On re-audit**, open with a delta summary before the report in the user's detected language:
+- English: *"Since the last audit: score improved from [X] → [Y]. 🔴 issues down from [N] to [N]. Here's what's new..."*
+- Korean: *"지난 감사 이후: 점수가 [X] → [Y]로 향상되었습니다. 🔴 심각한 문제가 [N]개에서 [N]개로 감소했습니다. 변경된 내용은 다음과 같습니다..."*
 
-Then show only the **changed or new** issues — do not re-list resolved ones. Acknowledge wins explicitly:
-> "✅ Fixed since last audit: Color & Contrast (+3pts), States (+4pts)"
+Then show only the **changed or new** issues — do not re-list resolved ones. Acknowledge wins explicitly in the user's detected language:
+- English: *"✅ Fixed since last audit: Color & Contrast (+3pts), States (+4pts)"*
+- Korean: *"✅ 지난 감사 이후 수정됨: 색상 대비 (+3점), 상태 (+4점)"*
 
 **After the radar chart**, if 2+ audits exist in the session, render a second small Visualizer widget — a simple horizontal progress bar or sparkline showing score history across audits (e.g. 58 → 71 → 84). Keep it minimal: one line, scores as labels, no axes. This helps users feel the momentum of improvement.
 
@@ -592,9 +611,9 @@ After every report and radar chart, present a **"What next?" widget** using the 
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing the full audit report.
 
-Then respond based on their selection. If they dismiss the widget, fall back to:
-
-> "Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."
+Then respond based on their selection. If they dismiss the widget, fall back to a language-appropriate line:
+- English: *"Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."*
+- Korean: *"이 중에서 수정을 도와드릴까요? 코드를 직접 수정하거나 Figma에서 변경할 수 있습니다. 직접 해보고 싶으시면 단계별로 안내해 드릴게요."*
 
 ### Ambiguous Input Widget
 If the user triggers the skill but shares nothing (e.g. just says "audit this" with no attachment), use ask_user_input before asking in prose:
