@@ -76,6 +76,54 @@ Once the design is received, present a scope widget using ask_user_input:
 
 **If "Full audit"** → run all 17 categories as normal.
 
+### Step 1c: Audit Goal Context
+After scope is selected, present a second widget using ask_user_input:
+
+- question: "What stage is this design at?"
+- type: single_select
+- options:
+  - "Early concept / wireframe"
+  - "Ready for dev handoff"
+  - "Already in production"
+
+**Adjust severity thresholds based on stage:**
+
+| Issue Type | Early Concept | Dev Handoff | Production |
+|---|---|---|---|
+| Missing hover/focus states | 🟢 Tip | 🟡 Warning | 🔴 Critical |
+| Placeholder content | 🟢 Tip | 🔴 Critical | 🔴 Critical |
+| Off-grid spacing | 🟢 Tip | 🟡 Warning | 🟡 Warning |
+| WCAG contrast failure | 🟡 Warning | 🔴 Critical | 🔴 Critical |
+| Missing error states | 🟢 Tip | 🟡 Warning | 🔴 Critical |
+| Hardcoded tokens | 🟢 Tip | 🟡 Warning | 🔴 Critical |
+| Icon touch targets | 🟡 Warning | 🔴 Critical | 🔴 Critical |
+
+Always state the stage at the top of the report:
+> **Design stage: Early concept** — severity thresholds adjusted accordingly.
+
+### Step 1d: WCAG Level
+Present a final pre-audit widget using ask_user_input:
+
+- question: "Which WCAG level are you targeting?"
+- type: single_select
+- options: "AA (standard — 4.5:1 text, 3:1 UI)" / "AAA (enhanced — 7:1 text, 4.5:1 UI)"
+
+**If AA (default):**
+- Normal text: ≥ 4.5:1
+- Large text (18px+ or 14px+ bold): ≥ 3:1
+- UI components & graphics: ≥ 3:1
+
+**If AAA:**
+- Normal text: ≥ 7:1
+- Large text: ≥ 4.5:1
+- UI components & graphics: ≥ 4.5:1
+- No images of text (except logos)
+- Reflow: content must reflow at 400% zoom without horizontal scroll
+- Focus appearance: focus indicator must have 3:1 contrast against adjacent colors
+
+Always state WCAG level at the top of the report:
+> **WCAG target: AA** or **WCAG target: AAA**
+
 ### Partial Audit Mode (auto-detected)
 If the user shares a single isolated component (e.g. a button, a card, an input field), automatically skip categories that are not applicable and declare which were skipped:
 - Skip: Navigation Patterns, i18n & RTL, Responsiveness (unless clearly a responsive layout)
@@ -103,8 +151,15 @@ Call `get_design_context` on the node. Returns: layer structure, component names
 ### F3: Get a Screenshot
 Call `get_screenshot` on the same node. Essential — context data alone misses visual issues like crowding, poor contrast, or bad hierarchy.
 
+### F3.5: Get Variable Definitions
+Call `get_variable_defs` on the same node. Returns the actual token/variable data bound to the design (e.g. `color/primary: #7c3aed`, `spacing/md: 16px`). Use this to power Category 17 (Design Tokens) with real data:
+- If a value in `get_design_context` matches a variable in `get_variable_defs` → it is tokenized ✅
+- If a value in `get_design_context` has no matching variable → it is hardcoded 🔴
+- If `get_variable_defs` returns empty or fails → note "No variables found — token coverage cannot be verified" and audit Cat 17 from context data only
+- Declare token coverage % in the Cat 17 section: e.g. "4 of 7 color values tokenized (57%)"
+
 ### F4: Run the Audit
-With both context data and screenshot in hand, run the full audit below.
+With context data, variable definitions, and screenshot in hand, run the full audit below.
 
 ### F5: Fix Directly in Figma (if requested)
 Offer to apply fixes using `perform_editing_operations`. Always target specific node IDs. Never bulk-edit without confirmation. See `references/figma-mcp.md` for safe patterns.
@@ -363,6 +418,17 @@ Start at **100 points**. Deduct for every issue found:
 
 **Floor is 0** — score never goes negative.
 
+### Accessibility Score
+In addition to the overall score, always surface a separate **Accessibility Score** combining Categories 2, 6, 7, and 16:
+
+- Start at 100, apply same deduction formula to issues in those 4 categories only
+- Display as: **Accessibility Score: X/100**
+- Scoring bands: 90–100 = WCAG compliant, 70–89 = minor gaps, 50–69 = significant gaps, <50 = failing
+
+> **Accessibility Score: 74/100** — 2 contrast failures, 1 missing form label. Not yet WCAG AA compliant.
+
+Teams often need to track accessibility independently from overall design quality — this score makes that easy.
+
 Scoring bands:
 - **90–100** → Production-ready
 - **70–89** → Solid, minor fixes needed
@@ -443,7 +509,7 @@ After every report, present a **"What next?" widget** using the ask_user_input t
 
 - question: "What would you like to do next?"
 - type: multi_select
-- options: "Fix all Critical issues" / "Fix a specific issue" / "Explain an issue in more detail" / "Re-audit after my changes" / "Export report as text"
+- options: "Fix all Critical issues" / "Fix a specific issue" / "Developer handoff report" / "Explain an issue in more detail" / "Re-audit after my changes" / "Export report as text"
 
 Then respond based on their selection. If they dismiss the widget, fall back to:
 
