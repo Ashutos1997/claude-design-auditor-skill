@@ -1,5 +1,6 @@
 ---
 name: design-auditor
+version: 1.2.0
 description: "Audit designs against 17 professional rules. Use when the user wants to review, audit, validate, or improve a design using Figma MCP, code (HTML/CSS/React/Vue), screenshots, or written descriptions. Triggers on phrases like check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP. Valuable for developers and non-designers who need expert design validation."
 ---
 
@@ -57,36 +58,48 @@ If nothing shared yet, use ask_user_input:
 - type: single_select
 - options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
-### Step 1b: Audit Scope
-Once the design is received, present a scope widget using ask_user_input:
+### Step 1b: Smart Defaults (infer before asking)
 
-- question: "What kind of audit do you want?"
-- type: single_select
-- options:
-  - "Full audit — all 17 categories / 전체 감사 — 17개 카테고리"
-  - "Quick audit — top 5 / 빠른 감사 — 상위 5개"
-  - "Custom — I'll pick categories / 직접 선택"
+Before presenting any widget, infer as much as possible from what was submitted. Only ask when genuinely ambiguous.
 
-**If "Quick audit"** → only run Categories 1, 2, 3, 4, 6. State at top of report: "Quick audit — 5 of 17 categories checked."
+**Infer scope from the request:**
+- User says "quick look", "just check", "fast review" → default to Quick audit
+- User says "full audit", "everything", "thorough" → default to Full audit
+- User mentions specific areas ("check my typography", "is the contrast ok?") → default to Custom, pre-select those categories
+- No signal → default to Full audit and proceed without asking
 
-**If "Custom"** → present a second widget:
-- question: "Which categories would you like audited?"
-- type: multi_select
-- options: "Typography / 타이포그래피" / "Color & Contrast / 색상 대비" / "Spacing & Layout / 간격" / "Visual Hierarchy / 시각적 계층" / "Consistency / 일관성" / "Accessibility / 접근성" / "Responsiveness / 반응형" / "States / 상태" / "Microcopy / 문구" / "i18n & RTL" / "Corner Radius / 모서리 반경" / "Elevation & Shadows / 그림자" / "Iconography / 아이콘" / "Navigation / 내비게이션" / "Design Tokens / 디자인 토큰"
+**Infer stage from the design itself:**
+- Greyscale / wireframe / lorem ipsum present → Early concept
+- Polished visuals, real content, component library → Dev handoff
+- User says "live", "shipped", "in production", "our app" → Production
+- No signal → default to Dev handoff (the strictest safe default)
 
-**If "Full audit"** → run all 17 categories as normal.
+**Infer WCAG level:**
+- Always default to AA. Only ask if the user explicitly mentions AAA, government/legal context, or "enhanced accessibility."
 
-### Step 1c: Audit Goal Context
-After scope is selected, present a second widget using ask_user_input:
+**Only ask questions when inference fails.** If all three can be inferred, skip all widgets and go straight to the audit. State inferred values at the top of the report:
+> **Inferred: Full audit · Dev handoff · WCAG AA** — let me know if any of these are wrong.
 
-- question: "What stage is this design at?"
-- type: single_select
-- options:
-  - "Early concept / wireframe / 초기 개념 / 와이어프레임"
-  - "Ready for dev handoff / 개발 전달 준비"
-  - "Already in production / 운영 중"
+**If scope is still ambiguous after inference**, ask one combined widget — not three separate ones:
+- question: "A few quick settings before I start:"
+- type: multi_select (let them override any inferred value)
+- options: "Full audit (default) / 전체 감사" / "Quick audit — 5 categories / 빠른 감사" / "Custom categories / 직접 선택" / "Early concept / 초기 개념" / "Dev handoff (default) / 개발 전달" / "Production / 운영 중" / "WCAG AAA (default is AA)"
 
-**Adjust severity thresholds based on stage:**
+**If Quick audit is selected or inferred**, dynamically pick the 5 highest-risk categories based on input type — do NOT use a hardcoded list:
+
+| Submitted Type | Quick audit categories |
+|---|---|
+| Full page screenshot | Color & Contrast, Visual Hierarchy, Typography, Spacing & Layout, Accessibility |
+| Form | Accessibility, States, Microcopy, Color & Contrast, Spacing & Layout |
+| Dashboard / data-heavy | Visual Hierarchy, Typography, Color & Contrast, Consistency, Responsiveness |
+| Single component | Color & Contrast, Accessibility, States, Typography, Spacing & Layout |
+| Navigation | Accessibility, States, Navigation, Responsiveness, Visual Hierarchy |
+| Figma file | Color & Contrast, Design Tokens, Accessibility, Spacing & Layout, Consistency |
+| Code file | Accessibility, Design Tokens, States, Color & Contrast, Typography |
+
+State at top of report: "Quick audit — 5 categories selected for your [type]. Run a full audit to check all 17."
+
+**Severity thresholds by stage** (apply silently based on inferred or selected stage):
 
 | Issue Type | Early Concept | Dev Handoff | Production |
 |---|---|---|---|
@@ -98,37 +111,28 @@ After scope is selected, present a second widget using ask_user_input:
 | Hardcoded tokens | 🟢 Tip | 🟡 Warning | 🔴 Critical |
 | Icon touch targets | 🟡 Warning | 🔴 Critical | 🔴 Critical |
 
-Always state the stage at the top of the report:
-> **Design stage: Early concept** — severity thresholds adjusted accordingly.
+**WCAG AA thresholds (default):**
+- Normal text: ≥ 4.5:1 · Large text (18px+ or 14px+ bold): ≥ 3:1 · UI components: ≥ 3:1
 
-### Step 1d: WCAG Level
-Present a final pre-audit widget using ask_user_input:
+**WCAG AAA thresholds (if requested):**
+- Normal text: ≥ 7:1 · Large text: ≥ 4.5:1 · UI components: ≥ 4.5:1 · No images of text · Reflow at 400% · Focus indicator 3:1 contrast
 
-- question: "Which WCAG level are you targeting?"
-- type: single_select
-- options: "AA (standard — 4.5:1 text, 3:1 UI / AA 표준)" / "AAA (enhanced — 7:1 text, 4.5:1 UI / AAA 강화)"
+### Component-Type Detection (auto-detected)
 
-**If AA (default):**
-- Normal text: ≥ 4.5:1
-- Large text (18px+ or 14px+ bold): ≥ 3:1
-- UI components & graphics: ≥ 3:1
+Identify what type of UI was submitted and weight categories accordingly. Never apply a one-size-fits-all audit.
 
-**If AAA:**
-- Normal text: ≥ 7:1
-- Large text: ≥ 4.5:1
-- UI components & graphics: ≥ 4.5:1
-- No images of text (except logos)
-- Reflow: content must reflow at 400% zoom without horizontal scroll
-- Focus appearance: focus indicator must have 3:1 contrast against adjacent colors
+| Detected Type | Signals | Priority Categories | Skip |
+|---|---|---|---|
+| **Full page / screen** | Multiple sections, nav, hero, footer | All 17 | Nothing |
+| **Form** | Input fields, labels, submit button | Accessibility, States, Microcopy, Spacing, Typography | i18n (unless multilingual signals) |
+| **Modal / dialog** | Overlay, close button, constrained width | Spacing, States, Microcopy, Accessibility, Elevation | Navigation, Responsiveness |
+| **Navigation** | Nav bar, tabs, sidebar, breadcrumbs | Navigation, Accessibility, States, Responsiveness, Iconography | Elevation, Corner Radius |
+| **Card / list item** | Repeated unit, thumbnail, metadata | Typography, Spacing, Visual Hierarchy, Consistency, Corner Radius | Navigation, i18n |
+| **Dashboard** | Data viz, metrics, tables, filters | Visual Hierarchy, Consistency, Typography, Color, Responsiveness | Motion, i18n |
+| **Single component** | Button, input, badge, avatar alone | Typography, Color, Spacing, Accessibility, States, Corner Radius, Elevation | Navigation, i18n, Responsiveness |
 
-Always state WCAG level at the top of the report:
-> **WCAG target: AA** or **WCAG target: AAA**
-
-### Partial Audit Mode (auto-detected)
-If the user shares a single isolated component (e.g. a button, a card, an input field), automatically skip categories that are not applicable and declare which were skipped:
-- Skip: Navigation Patterns, i18n & RTL, Responsiveness (unless clearly a responsive layout)
-- Keep: Typography, Color, Spacing, Iconography, Accessibility, States, Microcopy, Design Tokens, Corner Radius, Elevation
-- State at top of report: "Partial audit — [N] of 17 categories applicable to this component. Skipped: [list]."
+Always state detected type and skipped categories at the top of the report:
+> **Detected: Form** — auditing 12 of 17 categories. Skipped: i18n & RTL, Navigation, Responsiveness, Motion, Design Tokens (no code provided).
 
 ---
 
@@ -166,20 +170,29 @@ Offer to apply fixes using `perform_editing_operations`. Always target specific 
 
 ---
 
-## Step 1.5: Set Confidence Level
+## Step 1.5: Set Confidence Level — and act on it
 
-Before running the audit, declare your confidence level based on the input type:
+Declare confidence based on input type, then **change audit behaviour accordingly**. Confidence is not just a label.
 
-| Input Type | Confidence | What It Means |
+| Input Type | Confidence | Behaviour changes |
 |---|---|---|
-| Figma file via MCP | 🟢 High | Full layer data + screenshot. Most accurate audit. |
-| Code (HTML/CSS/React) | 🟢 High | Direct access to values. Can catch all issues. |
-| Screenshot / image | 🟡 Medium | Visual only. Can't verify exact px values or token usage. |
-| Description only | 🔴 Low | Too abstract. Ask for visuals before auditing. |
+| Figma file via MCP | 🟢 High | Full audit. All deductions apply. Exact values cited. |
+| Code (HTML/CSS/React) | 🟢 High | Full audit. All deductions apply. Quote actual values in fixes. |
+| Screenshot / image | 🟡 Medium | Visual audit only. Reduce deductions by 50% for issues that require exact values (spacing, token usage, exact px). Flag estimated values explicitly. Skip Design Tokens category entirely. |
+| Description only | 🔴 Low | Do not run a scored audit. Instead: ask for visuals, explain what you *can* observe from the description, list likely risk areas. Never assign a score on description alone. |
 
-Always state this at the top of the report:
-> **Audit confidence: 🟢 High** (Figma MCP — full layer data + screenshot)
-> **Audit confidence: 🟡 Medium** (Screenshot — visual audit only, exact values estimated)
+**At 🟡 Medium confidence (screenshot input):**
+- Flag every estimated value: > "Spacing appears to be ~12px (estimated from visual)"
+- Do not cite exact hex values — describe color relationship instead: > "Text appears low contrast against the background — likely below 4.5:1"
+- Skip categories that are impossible to assess visually: Design Tokens, exact Typography metrics
+- Add a banner at the top of the report:
+  > ⚠️ **Medium confidence audit** — input was a screenshot. Values are estimated from visual inspection. For an exact audit, share the Figma file or component code.
+- Apply a **−50% deduction modifier** to all 🟡 Warning and 🟢 Tip issues that depend on exact values. Only 🔴 Critical visual issues (clear contrast failures, missing states visible in screenshot) take full deductions.
+
+**At 🟢 High confidence (Figma or code):**
+- Cite exact values in every issue: "padding: 13px — should be 12px or 16px (8pt grid)"
+- Reference specific layer names (Figma) or line numbers (code)
+- Full deductions apply, no modifiers
 
 ---
 
@@ -204,6 +217,8 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Text contrast** — WCAG AA: 4.5:1 for normal text, 3:1 for large text (18px+).
 - [ ] **Alignment** — Don't randomly mix left-aligned and center-aligned body text.
 
+**→ Widget trigger:** If any typography issue is found, use the Visualizer to render the **Type Scale Stack** widget. Pass the detected font sizes and their roles (h1, h2, body, caption etc.) as data. Renders each size at actual scale, flags duplicate sizes, ratios too close to distinguish, and body text below minimum. Introduce with: *"Here's how your type scale stacks up visually."*
+
 ---
 
 ### CATEGORY 2: Color & Contrast
@@ -214,6 +229,8 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Palette size** — 1 primary + 1 accent + neutrals beats many colors.
 - [ ] **Color consistency** — Same color = same meaning everywhere.
 - [ ] **Low-contrast combos** — Light gray on white, yellow on white, white on light blue all commonly fail.
+
+**→ Widget trigger:** If any contrast issue is found, use the Visualizer to render the **Contrast Checker** widget. Pre-populate the foreground and background hex values from the failing pair identified in the audit. The widget shows all 5 WCAG pass/fail levels live, a real text preview at heading/body/label sizes, and automatically calculates the nearest passing hex value as a fix suggestion. Introduce with: *"Use this to test fixes — the widget calculates the exact color adjustment needed."*
 
 ---
 
@@ -226,6 +243,8 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Breathing room** — Enough whitespace? Dense UIs overwhelm.
 - [ ] **Alignment** — Elements align to a shared edge or center.
 - [ ] **Content margins** — Consistent left/right margins, not edge-to-edge.
+
+**→ Widget trigger:** If any off-grid spacing value is found, use the Visualizer to render the **8pt Grid Visualizer** widget. Pre-populate the input with the first offending value found. The widget shows the value on a ruler alongside valid grid neighbours, calculates the snap distance, and pre-colors all common spacing values as on/off-grid. Introduce with: *"Here's where that value sits on the grid and what to snap it to."*
 
 ---
 
@@ -318,6 +337,8 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Success state** — After a form submission or action, confirm it worked. A toast, a green banner, or a state change — something must close the loop.
 - [ ] **Disabled state** — Disabled buttons and inputs should look visually distinct (reduced opacity, no pointer cursor) and ideally explain why they're disabled.
 - [ ] **Consistency** — Loading/empty/error states should match the overall visual style — not be plain browser defaults or unstyled fallbacks.
+
+**→ Widget trigger:** If any missing state is found, always render the **States Coverage Map** widget — even for a single missing state. Pre-populate the grid with the components identified in the audit and mark states as present, missing, or N/A based on what was observed. Mark cells as N/A only when a state genuinely cannot apply to that component (e.g. "Empty" on a Button). Introduce with: *"Here's the full picture of which states are designed and which are missing."*
 
 ---
 
@@ -480,11 +501,48 @@ Always use this exact structure — no exceptions:
 ### ✅ What's Working Well
 [2–3 specific genuine positives. Builds design instincts.]
 
-### 🎯 Top 3 Priority Fixes
-1. [Highest impact — most points to recover]
-2. [Second]
-3. [Third]
+### 🎯 Issue Priority Matrix
+After listing all issues, use the Visualizer to render the **Issue Priority Matrix** widget instead of a static "Top 3 fixes" list. Plot every issue found as a dot using these effort/impact scores:
+
+**Effort heuristics (1–10):**
+- 1–2: Change a single value (color, size, spacing)
+- 3–4: Rework one component or add one new state
+- 5–6: Refactor multiple components or implement a system change
+- 7–9: Architectural change (token system overhaul, full responsive pass)
+
+**Impact heuristics (1–10):**
+- 9–10: Breaks accessibility or core usability (Critical issues)
+- 6–8: Meaningfully degrades experience (most Warnings)
+- 3–5: Polish-level improvement (minor Warnings, Tips)
+- 1–2: Cosmetic only
+
+Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Introduce with: *"Here's every issue mapped by how hard it is to fix versus how much it will improve the design — start in the top-left."*
 ```
+
+### Step 3b: Radar Chart Visualizer (always run after report)
+
+Immediately after presenting the markdown report, use the Visualizer tool to render an interactive radar chart widget. This gives users a visual at-a-glance summary of all category scores.
+
+**How to generate it:**
+- Extract the per-category scores (X/10) from the audit you just ran
+- Use only the categories that were actually audited (skip ones marked as not applicable)
+- Pass real scores — do not use placeholder data
+- Use exactly two colors: `#534AB7` (purple) for the filled shape and dots, `#E24B4A` (red) for scores ≤ 5 only
+- Label low-scoring categories (≤5) in red bold, all others in muted gray
+- Each segment and label must be clickable via `sendPrompt()` to drill into that category
+- Show a compact score-bar legend below the chart listing all audited categories
+- Display the overall score in the centre of the radar
+
+**Session history awareness:**
+Store the current overall score in a JS variable accessible to the widget. If a previous score exists in the session (from a re-audit), show a delta badge next to the centre score:
+- Score improved: `+N ↑` in green
+- Score dropped: `−N ↓` in red  
+- No change: omit the badge
+
+**Tone:** Introduce the chart with one short sentence before the Visualizer call, e.g.:
+> "Here's a visual breakdown of how your design scores across each category — red spots are your highest-priority fixes."
+
+---
 
 ### Severity Filter
 After presenting the report, offer a filter widget using ask_user_input if there are 5+ issues:
@@ -495,21 +553,44 @@ After presenting the report, offer a filter widget using ask_user_input if there
 
 Apply the filter and re-present only the relevant issue sections. Score and category breakdown always remain visible regardless of filter.
 
-### Re-audit: History Awareness
-If the user has been audited before in this session or mentions a previous audit, open with a delta summary:
+### Re-audit: Session Progress Tracker
+
+Maintain a running audit history across the session. Every time an audit completes, record:
+- Overall score
+- Accessibility score
+- Count of 🔴 critical / 🟡 warning / 🟢 tip issues
+- Timestamp label (e.g. "Audit 1", "Audit 2")
+
+**On re-audit**, open with a delta summary before the report:
 > "Since the last audit: score improved from [X] → [Y]. 🔴 issues down from [N] to [N]. Here's what's new..."
 
-Then show only the changed/new issues — don't re-list resolved ones. Acknowledge wins explicitly.
+Then show only the **changed or new** issues — do not re-list resolved ones. Acknowledge wins explicitly:
+> "✅ Fixed since last audit: Color & Contrast (+3pts), States (+4pts)"
+
+**After the radar chart**, if 2+ audits exist in the session, render a second small Visualizer widget — a simple horizontal progress bar or sparkline showing score history across audits (e.g. 58 → 71 → 84). Keep it minimal: one line, scores as labels, no axes. This helps users feel the momentum of improvement.
 
 ---
 
 ## Step 4: Offer to Fix
 
-After every report, present a **"What next?" widget** using the ask_user_input tool with these options:
+After every report and radar chart, present a **"What next?" widget** using the ask_user_input tool:
 
 - question: "What would you like to do next?"
 - type: multi_select
-- options: "Fix all Critical issues / 심각한 문제 모두 수정" / "Fix a specific issue / 특정 문제 수정" / "Developer handoff report / 개발자 전달 보고서" / "Explain an issue / 문제 설명" / "Re-audit / 재감사" / "Export report / 보고서 내보내기"
+- options:
+  - "Fix all Critical issues / 심각한 문제 모두 수정"
+  - "Fix a specific issue / 특정 문제 수정"
+  - "Developer handoff report / 개발자 전달 보고서"
+  - "Explain an issue / 문제 설명"
+  - "Re-audit / 재감사"
+  - "Export report / 보고서 내보내기"
+  - "Show session progress / 세션 진행 상황"
+
+**If "Show session progress"** → render the session sparkline widget showing all audit scores in the current session, with issue count deltas per audit. Only show this option if 2+ audits have been run.
+
+**If "Developer handoff report"** → produce a clean markdown summary with: overall score, category table, critical issues only (with exact code fixes), and accessibility score. Format it as a copyable block the developer can paste into a PR or Notion doc.
+
+**If "Export report"** → create a downloadable `.md` file via file_create containing the full audit report.
 
 Then respond based on their selection. If they dismiss the widget, fall back to:
 
@@ -522,7 +603,8 @@ If the user triggers the skill but shares nothing (e.g. just says "audit this" w
 - type: single_select
 - options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
-**In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.  
+**In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.
+
 **In code**: Always show a before/after diff when fixing:
 ```
 // BEFORE
@@ -533,6 +615,13 @@ color: #aaa;
 padding: 12px 24px;  /* 8pt grid */
 color: #666;          /* 4.5:1 contrast on white */
 ```
+
+**In screenshots (🟡 Medium confidence)**: Never write code fixes for screenshot input — there is no source to edit. Instead give **design direction**:
+- Describe the change spatially: > "Increase the gap between the label and input field — it should feel like they breathe, roughly 1.5× the current distance."
+- Give the target value as a design spec, not code: > "Text color needs to be darker — aim for at least 4.5:1 against that background. A dark gray like #333 or #444 would work."
+- Reference visual landmarks: > "The card padding looks tight on the left side — match it to the top padding so all four sides feel equal."
+- If the user needs code, prompt them: > "If you can share the component code or Figma file, I can give you the exact value to change."
+
 **Teaching mode**: Walk through the fix step by step instead of doing it for them.
 
 ---
