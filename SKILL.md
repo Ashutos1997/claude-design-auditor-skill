@@ -55,7 +55,7 @@ Then **explain every term you use** inline (e.g., if you say "visual hierarchy",
 If nothing shared yet, use ask_user_input:
 - question: "What are you sharing for the audit?"
 - type: single_select
-- options: "Figma link" / "Screenshot" / "Code (HTML/CSS/React)" / "Written description"
+- options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
 ### Step 1b: Audit Scope
 Once the design is received, present a scope widget using ask_user_input:
@@ -63,16 +63,16 @@ Once the design is received, present a scope widget using ask_user_input:
 - question: "What kind of audit do you want?"
 - type: single_select
 - options:
-  - "Full audit — all 17 categories"
-  - "Quick audit — top 5 (typography, color, spacing, hierarchy, accessibility)"
-  - "Custom — I'll pick the categories"
+  - "Full audit — all 17 categories / 전체 감사 — 17개 카테고리"
+  - "Quick audit — top 5 / 빠른 감사 — 상위 5개"
+  - "Custom — I'll pick categories / 직접 선택"
 
 **If "Quick audit"** → only run Categories 1, 2, 3, 4, 6. State at top of report: "Quick audit — 5 of 17 categories checked."
 
 **If "Custom"** → present a second widget:
 - question: "Which categories would you like audited?"
 - type: multi_select
-- options: "Typography" / "Color & Contrast" / "Spacing & Layout" / "Visual Hierarchy" / "Consistency" / "Accessibility" / "Responsiveness" / "States" / "Microcopy" / "i18n & RTL" / "Corner Radius" / "Elevation & Shadows" / "Iconography" / "Navigation" / "Design Tokens"
+- options: "Typography / 타이포그래피" / "Color & Contrast / 색상 대비" / "Spacing & Layout / 간격" / "Visual Hierarchy / 시각적 계층" / "Consistency / 일관성" / "Accessibility / 접근성" / "Responsiveness / 반응형" / "States / 상태" / "Microcopy / 문구" / "i18n & RTL" / "Corner Radius / 모서리 반경" / "Elevation & Shadows / 그림자" / "Iconography / 아이콘" / "Navigation / 내비게이션" / "Design Tokens / 디자인 토큰"
 
 **If "Full audit"** → run all 17 categories as normal.
 
@@ -82,9 +82,9 @@ After scope is selected, present a second widget using ask_user_input:
 - question: "What stage is this design at?"
 - type: single_select
 - options:
-  - "Early concept / wireframe"
-  - "Ready for dev handoff"
-  - "Already in production"
+  - "Early concept / wireframe / 초기 개념 / 와이어프레임"
+  - "Ready for dev handoff / 개발 전달 준비"
+  - "Already in production / 운영 중"
 
 **Adjust severity thresholds based on stage:**
 
@@ -106,7 +106,7 @@ Present a final pre-audit widget using ask_user_input:
 
 - question: "Which WCAG level are you targeting?"
 - type: single_select
-- options: "AA (standard — 4.5:1 text, 3:1 UI)" / "AAA (enhanced — 7:1 text, 4.5:1 UI)"
+- options: "AA (standard — 4.5:1 text, 3:1 UI / AA 표준)" / "AAA (enhanced — 7:1 text, 4.5:1 UI / AAA 강화)"
 
 **If AA (default):**
 - Normal text: ≥ 4.5:1
@@ -491,7 +491,7 @@ After presenting the report, offer a filter widget using ask_user_input if there
 
 - question: "Would you like to filter the issues?"
 - type: single_select
-- options: "Show only 🔴 Critical" / "Show 🔴 Critical + 🟡 Warnings" / "Show everything" / "No filter, keep as is"
+- options: "Show only 🔴 Critical / 심각한 문제만" / "Show 🔴 + 🟡 / 심각 + 경고" / "Show everything / 전체 보기" / "No filter / 필터 없음"
 
 Apply the filter and re-present only the relevant issue sections. Score and category breakdown always remain visible regardless of filter.
 
@@ -509,7 +509,7 @@ After every report, present a **"What next?" widget** using the ask_user_input t
 
 - question: "What would you like to do next?"
 - type: multi_select
-- options: "Fix all Critical issues" / "Fix a specific issue" / "Developer handoff report" / "Explain an issue in more detail" / "Re-audit after my changes" / "Export report as text"
+- options: "Fix all Critical issues / 심각한 문제 모두 수정" / "Fix a specific issue / 특정 문제 수정" / "Developer handoff report / 개발자 전달 보고서" / "Explain an issue / 문제 설명" / "Re-audit / 재감사" / "Export report / 보고서 내보내기"
 
 Then respond based on their selection. If they dismiss the widget, fall back to:
 
@@ -520,7 +520,7 @@ If the user triggers the skill but shares nothing (e.g. just says "audit this" w
 
 - question: "What are you sharing for the audit?"
 - type: single_select
-- options: "Figma link" / "Screenshot" / "Code (HTML/CSS/React)" / "Written description"
+- options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
 **In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.  
 **In code**: Always show a before/after diff when fixing:
