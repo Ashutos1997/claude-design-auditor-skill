@@ -2,16 +2,21 @@
 
 Most beginner UIs only design the "happy path" — data loads perfectly and the user does everything right. In reality, users spend a surprising amount of time in other states. Each needs its own design.
 
-## The 6 States Every UI Component Can Be In
+## The 9 States Every UI Component Can Be In
 
 | State | When | Design Priority |
 |---|---|---|
 | **Default** | Nothing has happened yet | ✅ Always designed |
+| **Hover** | Cursor over an interactive element | 🟡 Sometimes missing |
+| **Focus** | Element selected via keyboard | ⚠️ Often forgotten |
+| **Active** | Element being pressed/clicked | 🟡 Sometimes missing |
 | **Loading** | Waiting for data or an action to complete | ⚠️ Often forgotten |
-| **Empty** | No data exists yet | ⚠️ Often forgotten |
 | **Error** | Something went wrong | ⚠️ Often forgotten |
-| **Success** | Action completed | ⚠️ Often forgotten |
+| **Empty** | No data exists yet | ⚠️ Often forgotten |
 | **Disabled** | Action not available | 🟡 Sometimes missing |
+| **Success** | Action completed | ⚠️ Often forgotten |
+
+Not every state applies to every component — a Button has no Empty state; a data table has no Active state. Use judgment. The States Coverage Map widget tracks all 9 and lets you mark cells N/A where a state genuinely can't apply.
 
 ---
 

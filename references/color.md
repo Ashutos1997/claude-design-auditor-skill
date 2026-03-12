@@ -56,7 +56,7 @@ This is the most important thing to check. Failing contrast = failing accessibil
 | White on mid-blue (#4A90E2) | ~3.3:1 | ❌ Fails for small text |
 | White on dark blue (#1E5BB5) | ~6.2:1 | ✅ Passes |
 
-**Check tool**: https://webaim.org/resources/contrastchecker/ or Figma's built-in accessibility panel.
+**Check tool**: During an audit, the inline **Contrast Checker** widget renders automatically when a contrast failure is found — it pre-populates the failing pair, shows all 5 WCAG levels live, and calculates the nearest passing hex fix. For standalone checking outside an audit: https://webaim.org/resources/contrastchecker/
 
 ---
 
