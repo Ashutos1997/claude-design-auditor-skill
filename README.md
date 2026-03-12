@@ -145,6 +145,23 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.0
+- **5 interactive audit widgets** — contextual tools now render inline at the exact moment they're relevant during an audit, not at the end:
+  - **Type Scale Stack** (fires on Cat 1): renders detected font sizes at actual scale, flags duplicate sizes, ratios too close to distinguish (<1.15×), and body text below minimum — interactive, add/remove sizes live
+  - **Contrast Checker** (fires on Cat 2): pre-populates the failing fg/bg pair, shows all 5 WCAG levels simultaneously, calculates and suggests the nearest passing hex fix automatically
+  - **8pt Grid Visualizer** (fires on Cat 3): pre-populates the offending px value on a ruler, shows valid grid neighbours and snap distances, pre-colors all common spacing values as on/off-grid, supports 4pt/8pt base toggle
+  - **States Coverage Map** (fires on Cat 11): interactive 6×9 grid of components × states — click or keyboard-navigate to mark cells present/missing/N/A, coverage bar with threshold labels (≥80% good, 50–79% gaps, <50% critical)
+  - **Issue Priority Matrix** (fires at end of every audit): replaces static "Top 3 fixes" list — all issues plotted on effort × impact axes across four zones (Quick wins, Big lifts, Polish later, Reconsider), severity shown as both color and letter (C/W/T) for colorblind accessibility, click any dot to request a fix
+- **Smart defaults** — scope, design stage, and WCAG level are now inferred from the request instead of asking 4 sequential questions upfront; only asks when genuinely ambiguous, and then asks once with a single combined widget; inferred settings stated at top of report
+- **Component-type detection** — auto-detects what's being audited (Full page, Form, Modal, Navigation, Card/list, Dashboard, Single component) and skips irrelevant categories; detected type and skipped categories declared at top of every report
+- **Confidence scoring acts on the audit** — 🟢 High (Figma/code) runs full deductions with exact values; 🟡 Medium (screenshot) applies −50% modifier on value-dependent issues, skips Design Tokens, adds a warning banner; 🔴 Low (description only) refuses to assign a score and asks for visuals instead
+- **Screenshot-specific fix path** — fixes for screenshot audits are now spatial design direction ("increase the gap between label and input") never code snippets, since there is no source to edit
+- **Session progress tracker** — records score, a11y score, and issue counts per audit; after 2+ audits shows a sparkline of score progression (e.g. 58 → 71 → 84) and explicitly acknowledges fixed issues: "✅ Fixed since last audit: Color & Contrast (+3pts)"
+- **Full Korean coverage for all new features** — every new user-facing string (all 5 widget intros, inferred settings banner, quick audit line, component detected line, medium confidence banner, re-audit delta summary, radar chart intro, Figma MCP unavailable message, "What next?" fallback) now has a Korean translation alongside English
+- **states.md updated** — "6 states" corrected to "9 states"; Hover, Focus, and Active added to the component state table with design priority ratings; N/A guidance added for the States Coverage Map widget
+- **color.md updated** — contrast checker tool reference now points to the inline widget as primary during audits, with the WebAIM external link retained as a fallback
+- Skill packaged as `design-auditor.skill` (zip archive, 61KB) with `version: 1.2.0` in SKILL.md frontmatter
+
 ### v1.1.5
 - Figma Variables integration: `get_variable_defs` now called on every Figma audit — Category 17 (Design Tokens) shows real token coverage % (e.g. "4 of 7 colors tokenized — 57%")
 - Audit goal context: choose design stage (Early concept / Dev handoff / Production) — severity thresholds adjust accordingly
