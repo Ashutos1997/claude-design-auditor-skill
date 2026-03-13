@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.0
+version: 1.2.1
 description: "Audit designs against 17 professional rules. Use when the user wants to review, audit, validate, or improve a design using Figma MCP, code (HTML/CSS/React/Vue), screenshots, or written descriptions. Triggers on phrases like check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP. Valuable for developers and non-designers who need expert design validation."
 ---
 
@@ -160,18 +160,111 @@ Call `get_design_context` on the node. Returns: layer structure, component names
 ### F3: Get a Screenshot
 Call `get_screenshot` on the same node. Essential — context data alone misses visual issues like crowding, poor contrast, or bad hierarchy.
 
-### F3.5: Get Variable Definitions
-Call `get_variable_defs` on the same node. Returns the actual token/variable data bound to the design (e.g. `color/primary: #7c3aed`, `spacing/md: 16px`). Use this to power Category 17 (Design Tokens) with real data:
+### F3.5: Get Variable Definitions + Contrast Analysis
+Call `get_variable_defs` on the same node. Returns the actual token/variable data bound to the design (e.g. `color/primary: #7c3aed`, `spacing/md: 16px`).
+
+**Use for Category 17 (Design Tokens):**
 - If a value in `get_design_context` matches a variable in `get_variable_defs` → it is tokenized ✅
 - If a value in `get_design_context` has no matching variable → it is hardcoded 🔴
 - If `get_variable_defs` returns empty or fails → note "No variables found — token coverage cannot be verified" and audit Cat 17 from context data only
 - Declare token coverage % in the Cat 17 section: e.g. "4 of 7 color values tokenized (57%)"
 
+**Use for Category 2 (Color & Contrast) — no screenshot required:**
+When color tokens are available from `get_variable_defs`, compute WCAG contrast ratios programmatically using this algorithm:
+
+```
+1. Extract all color token pairs where one is clearly a foreground (text, icon, border)
+   and the other is a background (surface, fill, container).
+   Look for naming patterns like:
+   - color/text/* paired with color/background/* or color/surface/*
+   - color/on-* paired with color/*
+   - color/foreground paired with color/canvas
+
+2. For each hex color, compute relative luminance:
+   - Normalize: R = hex_r/255, G = hex_g/255, B = hex_b/255
+   - Linearize: channel < 0.04045 ? channel/12.92 : ((channel+0.0539)/1.055)^2.4
+   - L = 0.2126*R_lin + 0.7152*G_lin + 0.0722*B_lin
+
+3. Compute contrast ratio:
+   - ratio = (lighter_L + 0.05) / (darker_L + 0.05)
+
+4. Compare against WCAG thresholds (from inferred or selected level):
+   - AA normal text: ≥ 4.5:1
+   - AA large text / UI components: ≥ 3:1
+   - AAA normal text: ≥ 7:1
+   - AAA large text: ≥ 4.5:1
+
+5. Flag any pair that fails as a Cat 2 issue. Pre-populate the Contrast Checker widget
+   with the exact failing hex pair and the computed ratio.
+
+6. Also flag if no text/background token pairs can be identified — this means contrast
+   cannot be verified from tokens alone.
+```
+
+**Confidence upgrade:** If `get_variable_defs` returns usable color pairs, the Cat 2 audit upgrades from 🟡 Medium to 🟢 High confidence even if no screenshot is available. State this explicitly:
+- English: *"Color contrast audited from design tokens (no screenshot required) — 🟢 High confidence."*
+- Korean: *"색상 대비는 디자인 토큰에서 감사되었습니다 (스크린샷 불필요) — 🟢 높은 신뢰도."*
+
+If `get_variable_defs` fails or returns no color pairs, fall back to screenshot-based visual assessment and 🟡 Medium confidence for Cat 2.
+
 ### F4: Run the Audit
 With context data, variable definitions, and screenshot in hand, run the full audit below.
 
 ### F5: Fix Directly in Figma (if requested)
-Offer to apply fixes using `perform_editing_operations`. Always target specific node IDs. Never bulk-edit without confirmation. See `references/figma-mcp.md` for safe patterns.
+When the user selects "Fix all Critical" or "Fix a specific issue" and the original input was a Figma file (not a screenshot or code), apply fixes using `perform_editing_operations`. Always follow the safety rules in `references/figma-mcp.md`.
+
+**Fix loop for Figma input:**
+For each confirmed fix (user selected "Yes, apply it"):
+1. Look up the node ID from the audit (should have been captured during F2)
+2. **Pre-flight check:** Before calling `perform_editing_operations`, verify:
+   - The node ID exists in the context data captured during F2
+   - The node is not inside a component instance (see component instance caveat in `references/figma-mcp.md`)
+   - The operation type matches the node type (e.g. `SET_FONT_SIZE` requires a text node)
+3. Call `perform_editing_operations` with the appropriate operation
+4. After each operation, call `get_screenshot` on the affected node to verify the change
+5. Show the screenshot and confirm ✅ with the before/after values
+6. If the operation fails → see **Failure recovery** below
+
+**Failure recovery — partial failure handling:**
+If `perform_editing_operations` throws an error or the screenshot shows the change did not apply:
+
+```
+Step 1: Identify the failure type
+  - "Node not found" → node ID is stale or incorrect. Re-call get_design_context to refresh.
+  - "Cannot edit instance" → node is inside a component instance. Find main component ID and retry there.
+  - "Invalid operation" → operation type doesn't match node type. Check node type in context data.
+  - "Permission denied" → file is view-only or in a shared library. Cannot edit via MCP.
+  - Unknown error → report to user and skip to next fix.
+
+Step 2: Report clearly to the user in their detected language
+  - English: "⚠️ Fix [N] failed: [reason]. Skipping to the next issue — I'll note this one so you can apply it manually."
+  - Korean: "⚠️ 수정 [N] 실패: [이유]. 다음 문제로 넘어갑니다 — 수동으로 적용할 수 있도록 기록해 두겠습니다."
+
+Step 3: Log the failed fix
+  Track all failed fixes in a list. After the loop completes, show a summary:
+  - English: "N fixes applied ✅. N fixes need manual attention:"
+  - Korean: "N개 수정 완료 ✅. N개는 수동 적용이 필요합니다:"
+  Then list each failed fix with the exact Figma right-panel value to enter manually.
+
+Step 4: Continue the loop
+  Never stop the entire fix loop because one fix failed. Skip the failed fix and continue.
+```
+
+**Operation type mapping — common audit fixes:**
+
+| Issue Type | Operation | Key Parameters |
+|---|---|---|
+| Off-grid width/height | `SET_WIDTH` / `SET_HEIGHT` | nodeId, value (snapped to 8pt) |
+| Off-grid padding | `SET_PADDING` | nodeId, paddingTop/Right/Bottom/Left |
+| Off-grid gap | `SET_ITEM_SPACING` | nodeId, itemSpacing |
+| Auto-layout direction | `SET_LAYOUT_MODE` | nodeId, layoutMode |
+| Auto-layout alignment | `SET_PRIMARY_AXIS_ALIGN_ITEMS` | nodeId, primaryAxisAlignItems |
+| Text color contrast fail | `SET_FILL_COLOR` | nodeId, color: {r,g,b,a} in 0–1 range |
+| Font size too small | `SET_FONT_SIZE` | nodeId, fontSize |
+| Rename unlabelled layer | `RENAME_LAYER` | nodeId, name |
+| Touch target too small | `SET_WIDTH` + `SET_HEIGHT` | nodeId, 44 (minimum) |
+
+**If `perform_editing_operations` is not available:** Fall back to design direction mode for all fixes — describe the change spatially and provide the exact Figma right-panel values to enter manually. Never silently skip without informing the user.
 
 ---
 
@@ -210,6 +303,16 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - 🟡 **Warning** — Weakens the design. Should fix. **(-4 points each)**
 - 🟢 **Tip** — Polish-level improvement. Nice to have. **(-1 point each)**
 
+**Scoring formula (always show this explicitly in every report):**
+```
+Score = 100 − (criticals × 8) − (warnings × 4) − (tips × 1)
+```
+Show the arithmetic inline so the user can see exactly how the score was reached. Example:
+> Score: 100 − (3 × 8) − (5 × 4) − (2 × 1) = 100 − 24 − 20 − 2 = **54/100**
+
+Never just show the final number. The breakdown makes the score feel earned and tells the user exactly what to fix to move the needle. If 🟡 Medium confidence applies a −50% modifier, show that too:
+> Score: 100 − (2 × 8) − (3 × 4 × 0.5) − (1 × 1 × 0.5) = 100 − 16 − 6 − 0.5 = **77/100** *(medium confidence modifier applied to warnings/tips)*
+
 ---
 
 ### CATEGORY 1: Typography
@@ -238,7 +341,7 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 - [ ] **Color consistency** — Same color = same meaning everywhere.
 - [ ] **Low-contrast combos** — Light gray on white, yellow on white, white on light blue all commonly fail.
 
-**→ Widget trigger:** If any contrast issue is found, use the Visualizer to render the **Contrast Checker** widget. Pre-populate the foreground and background hex values from the failing pair identified in the audit. The widget shows all 5 WCAG pass/fail levels live, a real text preview at heading/body/label sizes, and automatically calculates the nearest passing hex value as a fix suggestion. Introduce with one sentence in the user's detected language:
+**→ Widget trigger:** If any contrast issue is found — whether from `get_variable_defs` color token analysis (preferred) or from visual screenshot assessment — use the Visualizer to render the **Contrast Checker** widget. Pre-populate the foreground and background hex values from the failing pair. When contrast was calculated from design tokens, show the exact token names alongside the hex values (e.g. `color/text/secondary #8A8A8A on color/surface/default #FFFFFF — ratio: 3.1:1 ❌`). The widget shows all 5 WCAG pass/fail levels live, a real text preview at heading/body/label sizes, and automatically calculates the nearest passing hex value as a fix suggestion. Introduce with one sentence in the user's detected language:
 - English: *"Use this to test fixes — the widget calculates the exact color adjustment needed."*
 - Korean: *"이 도구로 수정 사항을 바로 테스트해 보세요 — 통과 가능한 정확한 색상값을 자동으로 계산해 드립니다."*
 
@@ -310,6 +413,7 @@ Check each category. Skip clearly inapplicable ones. Mark each issue:
 ---
 
 ### CATEGORY 8: Motion & Animation
+*Full rules → `references/animation.md`*
 
 - [ ] **Purpose** — Every animation orients, gives feedback, or shows a relationship. No pure decoration.
 - [ ] **Duration** — UI transitions: 150–300ms. Page transitions: 300–500ms. Longer feels sluggish.
@@ -485,8 +589,8 @@ Always use this exact structure — no exceptions:
 **Audit confidence:** [🟢 High / 🟡 Medium / 🔴 Low] ([reason])
 
 ### Overall Score: [X/100]
-[Score breakdown: 100 − (N × 🔴 8) − (N × 🟡 4) − (N × 🟢 1) = X]
-[One sentence rationale.]
+**Score breakdown: 100 − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]**
+[One sentence rationale — what dragged the score down most.]
 
 ### Score by Category
 | Category | Score | Issues |
@@ -635,7 +739,7 @@ If the user triggers the skill but shares nothing (e.g. just says "audit this" w
 - type: single_select
 - options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
-**In Figma**: `perform_editing_operations` → specific node IDs → see `references/figma-mcp.md`.
+**In Figma (🟢 High confidence, MCP active)**: Call `perform_editing_operations` → specific node IDs → verify with `get_screenshot` after each change. See F5 and `references/figma-mcp.md` for operation types and safety rules. If `perform_editing_operations` is unavailable, fall back to design direction.
 
 **In code**: Always show a before/after diff when fixing:
 ```
@@ -681,4 +785,4 @@ color: #666;          /* 4.5:1 contrast on white */
 - `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth
 - `references/iconography.md` — Icon families, optical sizing, touch targets, meaning
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
-- `references/tokens.md` — Design tokens, semantic naming, dark mode token swapping
+- `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, anti-patterns
