@@ -138,7 +138,7 @@ design-auditor/
     ├── figma-mcp.md                — Figma MCP workflow & safe editing
     ├── states.md                   — Loading, empty, error, success states
     ├── microcopy.md                — Button labels, errors, tone, terminology
-    ├── animation.md                — Cat 8 now has a full reference file
+    ├── animation.md                — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, anti-patterns
     └── i18n.md                     — RTL support, locale formatting, i18n
 
 ```
