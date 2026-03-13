@@ -147,8 +147,37 @@ design-auditor/
 
 ## Changelog
 
-### v1.2.1
-- Coming Soon.
+### v1.2.1.
+
+Changed
+- **Scoring formula now always shown explicitly** — every audit report includes the full
+  arithmetic breakdown (e.g. `100 − (3×8) − (5×4) − (2×1) = 54/100`) so users can see
+  exactly which issues are costing points and what fixing them is worth
+- **Medium confidence modifier now visible in score** — when screenshot input applies the
+  −50% deduction modifier, the adjusted formula is shown inline
+
+Added
+- **`references/animation.md`** — full reference file for Category 8 (Motion), covering
+  purpose taxonomy, duration scale, easing guide with CSS cubics, Figma Smart Animate
+  naming conventions, reduced motion rules, autoplay/loop policy, stagger limits, and
+  a severity table. Cat 8 was the only audited category without a dedicated reference file.
+- **Auto-layout edit operations in `figma-mcp.md`** — added `SET_LAYOUT_MODE`,
+  `SET_PRIMARY_AXIS_ALIGN_ITEMS`, `SET_COUNTER_AXIS_ALIGN_ITEMS`,
+  `SET_PRIMARY_AXIS_SIZE_TYPE` / `SET_COUNTER_AXIS_SIZE_TYPE` with examples
+- **Component instance caveat in `figma-mcp.md`** — documented how to detect instance
+  nodes, how to find and edit the main component instead, and what to do when the main
+  component lives in a shared library
+- **Partial failure recovery in fix loop (F5)** — typed failure classification (node not
+  found / cannot edit instance / invalid operation / permission denied / unknown), per-failure
+  user messaging in EN + KO, running failed-fixes log shown at end of loop with manual
+  instructions, explicit rule: never stop the loop because one fix failed
+- **Pre-flight check before each Figma edit** — verifies node ID exists, node is not inside
+  a component instance, and operation type matches node type before calling
+  `perform_editing_operations`
+- **Color contrast via design tokens (Cat 2 + F3.5)** — `get_variable_defs` now drives Cat 2
+  programmatically: extracts color token pairs, computes WCAG luminance ratios inline,
+  pre-populates Contrast Checker widget with exact hex pairs and token names. Cat 2 upgrades
+  to 🟢 High confidence when tokens are available — no screenshot required
 
 ### v1.2.0
 - **5 interactive audit widgets** — contextual tools now render inline at the exact moment they're relevant during an audit, not at the end:
