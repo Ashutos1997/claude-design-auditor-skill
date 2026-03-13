@@ -147,7 +147,7 @@ design-auditor/
 
 ## Changelog
 
-### v1.2.1.
+### v1.2.1
 
 Changed
 - **Scoring formula now always shown explicitly** — every audit report includes the full
