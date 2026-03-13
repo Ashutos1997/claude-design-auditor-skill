@@ -786,3 +786,4 @@ color: #666;          /* 4.5:1 contrast on white */
 - `references/iconography.md` — Icon families, optical sizing, touch targets, meaning
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
 - `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, anti-patterns
+- `references/tokens.md` - Design tokens, semantic naming, dark mode
