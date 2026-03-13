@@ -118,12 +118,28 @@ After each batch of edits, call `get_screenshot` to verify the result looks corr
 
 ### Common Edit Patterns
 
+#### Fix node width (snap to grid)
+```
+operation: "SET_WIDTH"
+nodeId: "[frame or component node ID]"
+value: 60  // snapped from 60.17px to nearest 8pt multiple
+```
+
+#### Fix node height (touch target)
+```
+operation: "SET_HEIGHT"
+nodeId: "[interactive element node ID]"
+value: 44  // WCAG minimum touch target
+```
+
 #### Fix a text color for contrast
 ```
 operation: "SET_FILL_COLOR"
 nodeId: "[text layer node ID]"
 color: { r: 0.2, g: 0.2, b: 0.2, a: 1.0 }  // #333333 — passes 4.5:1 on white
 ```
+
+**Hex to 0–1 conversion:** divide each channel by 255. `#7C3AED` → `{r: 0.486, g: 0.227, b: 0.929, a: 1.0}`
 
 #### Fix font size
 ```
@@ -149,11 +165,68 @@ nodeId: "[auto-layout frame node ID]"
 itemSpacing: 8
 ```
 
+#### Fix auto-layout direction
+```
+operation: "SET_LAYOUT_MODE"
+nodeId: "[auto-layout frame node ID]"
+layoutMode: "HORIZONTAL"  // or "VERTICAL" or "NONE"
+```
+
+#### Fix auto-layout alignment
+```
+operation: "SET_PRIMARY_AXIS_ALIGN_ITEMS"
+nodeId: "[auto-layout frame node ID]"
+primaryAxisAlignItems: "CENTER"  // SPACE_BETWEEN, MIN, MAX, CENTER
+
+operation: "SET_COUNTER_AXIS_ALIGN_ITEMS"
+nodeId: "[auto-layout frame node ID]"
+counterAxisAlignItems: "CENTER"  // MIN, MAX, CENTER, BASELINE
+```
+
+#### Fix auto-layout sizing (hug vs fixed vs fill)
+```
+operation: "SET_PRIMARY_AXIS_SIZE_TYPE"
+nodeId: "[auto-layout frame node ID]"
+primaryAxisSizeType: "AUTO"  // "AUTO" = hug contents, "FIXED" = fixed size
+
+operation: "SET_COUNTER_AXIS_SIZE_TYPE"
+nodeId: "[auto-layout frame node ID]"
+counterAxisSizeType: "AUTO"
+```
+
 #### Rename a layer (for component hygiene)
 ```
 operation: "RENAME_LAYER"
 nodeId: "[layer node ID]"
 name: "Button/Primary/Default"
+```
+
+---
+
+### ⚠️ Component Instance Caveat
+
+**You cannot directly edit layers inside a component instance.** If a node ID belongs to a layer inside an instance (not the main component), `perform_editing_operations` will fail or have no effect.
+
+**How to detect this:** In `get_design_context`, instances show as `type: "INSTANCE"`. Any child layer of an instance is read-only from outside.
+
+**What to do instead:**
+1. Check if the parent frame is an instance — look for `componentId` or `mainComponent` in the context data
+2. If it is an instance: inform the user that the fix must be applied to the **main component**, not the instance
+3. Find the main component node ID (from `componentId` in the context) and apply the edit there — it will propagate to all instances
+4. If the main component is in a different file (shared library), note that it cannot be edited via MCP and give design direction instead
+
+**Example message to user:**
+> "The node `68:27912` is inside a component instance. I'll apply this fix to the main component instead, which will update all instances automatically."
+
+---
+
+### Rule 6: Always verify with a screenshot after editing
+After each `perform_editing_operations` call:
+```
+1. Call get_screenshot on the same nodeId
+2. Show the screenshot to the user
+3. If the visual doesn't match intent → call perform_editing_operations again with corrected values
+4. Never assume the edit worked without visual confirmation
 ```
 
 ---
