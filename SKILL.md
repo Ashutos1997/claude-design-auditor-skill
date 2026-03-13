@@ -605,6 +605,19 @@ After every report and radar chart, present a **"What next?" widget** using the 
   - "Export report / 보고서 내보내기"
   - "Show session progress / 세션 진행 상황"
 
+**If "Fix all Critical issues"** → loop through each 🔴 issue one by one:
+1. Show issue name + before/after diff (code) or design direction (screenshot)
+2. Ask using ask_user_input:
+   - question: "Apply this fix? (Issue N of N)"
+   - type: single_select
+   - options: "Yes, apply it / 적용" / "Skip this one / 건너뛰기" / "Stop fixing / 중단"
+3. Apply or skip based on response, confirm each applied fix with ✅
+4. Move to the next 🔴 issue
+5. After all 🔴 issues are resolved or skipped: "All critical fixes done. Want to continue with 🟡 warnings?"
+Never batch-apply all fixes at once without per-issue confirmation.
+
+**If "Fix a specific issue"** → present a widget listing all 🔴 and 🟡 issues by name, let the user pick one, then show the before/after diff and apply the fix.
+
 **If "Show session progress"** → render the session sparkline widget showing all audit scores in the current session, with issue count deltas per audit. Only show this option if 2+ audits have been run.
 
 **If "Developer handoff report"** → produce a clean markdown summary with: overall score, category table, critical issues only (with exact code fixes), and accessibility score. Format it as a copyable block the developer can paste into a PR or Notion doc.
