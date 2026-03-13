@@ -138,12 +138,17 @@ design-auditor/
     ├── figma-mcp.md                — Figma MCP workflow & safe editing
     ├── states.md                   — Loading, empty, error, success states
     ├── microcopy.md                — Button labels, errors, tone, terminology
+    ├── animation.md                — Cat 8 now has a full reference file
     └── i18n.md                     — RTL support, locale formatting, i18n
+
 ```
 
 ---
 
 ## Changelog
+
+### v1.2.1
+- Coming Soon.
 
 ### v1.2.0
 - **5 interactive audit widgets** — contextual tools now render inline at the exact moment they're relevant during an audit, not at the end:
