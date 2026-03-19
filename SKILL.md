@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.1
+version: 1.2.2
 description: "Audit designs against 17 professional rules. Use when the user wants to review, audit, validate, or improve a design using Figma MCP, code (HTML/CSS/React/Vue), screenshots, or written descriptions. Triggers on phrases like check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP. Valuable for developers and non-designers who need expert design validation."
 ---
 
@@ -12,7 +12,7 @@ This skill is for everyone: developers who've never studied design, and designer
 
 ---
 
-## Step 0: Language & Beginner Check (Always Do This First)
+## Step 0: Language Detection & Beginner Check (Always Do This First)
 
 ### Language Detection
 Detect the language of the user's message and respond entirely in that language throughout the audit — including all issue labels, explanations, fix suggestions, and the final report. If the user writes in Korean, the full audit report must be in Korean. If in English, respond in English. Never mix languages in a single report.
@@ -23,10 +23,7 @@ Detect the language of the user's message and respond entirely in that language 
 - 🔴 심각한 문제 / 🟡 경고 / 🟢 팁
 - Overall score label: **디자인 감사 보고서** / 총점: X/100
 
----
-
-## Step 0: Beginner Check
-
+### Beginner Check
 Before anything else, gauge the user's familiarity with design from their message.
 
 **Signs they're a beginner:**
@@ -41,6 +38,16 @@ Before anything else, gauge the user's familiarity with design from their messag
 Then **explain every term you use** inline (e.g., if you say "visual hierarchy", briefly say what that means in parentheses).
 
 **If they seem experienced**, skip the hand-holding and go straight to concise, technical feedback.
+
+---
+
+## Tone Guidelines (Apply Throughout Every Step)
+
+- **Never condescending.** They're smart — they just haven't learned this yet.
+- **Always explain the "why."** One sentence is enough.
+- **Avoid jargon** unless the user uses it first.
+- **Be genuinely encouraging.** Real praise, not filler.
+- **Match their energy.** Casual question → relaxed tone. Formal request → structured response.
 
 ---
 
@@ -154,8 +161,67 @@ Never attempt to audit a Figma URL without MCP access — do not guess or halluc
 ### F1: Resolve the Link
 If given a Figma URL or shortlink → call `resolve_shortlink` first to get the node ID.
 
+### F1.5: Get File Structure
+Before diving into any node, call `get_design_pages` on the file key to understand the full file structure.
+
+**What to do with the result:**
+
+```
+If the file has 1 page:
+  → Proceed directly to F2 with the provided node ID. No need to ask.
+
+If the file has 2–5 pages:
+  → State the page names at the top of the report.
+  → If the user gave a specific node URL, audit that frame and note which page it's on.
+  → Offer to audit other pages after the current audit completes.
+
+If the file has 6+ pages:
+  → Present a widget before auditing:
+    question: "This file has [N] pages — which would you like to audit?"
+    type: single_select
+    options: [list of page names] + "Audit all pages / 모든 페이지 감사"
+  → If "Audit all pages": run sequential audits per page, aggregate scores, surface a
+    ranked summary at the end (highest issue count first).
+
+If the user gave no specific node ID (just a file URL):
+  → Use get_design_pages to list pages, present the widget above, then proceed.
+```
+
+**File structure line in report header** (always include when 2+ pages exist):
+- English: *"File: [N] pages — auditing '[page name]' (page [N] of [N])."*
+- Korean: *"파일: [N]개 페이지 — '[페이지 이름]' 감사 중 ([N]/[N])."*
+
 ### F2: Get Design Context
 Call `get_design_context` on the node. Returns: layer structure, component names, typography (font, size, weight, line-height), colors (fills, strokes, opacity), spacing (padding, gap, auto-layout), and component/style references.
+
+**Component health scan (run automatically on every Figma audit):**
+While reading the layer tree from `get_design_context`, tally the following:
+
+```
+For every layer in the tree, classify it:
+  - Named component instance (e.g. "Button/Primary/Default", "⚡ Input") → component ✅
+  - Raw frame/group with a meaningful name (e.g. "Header", "Card Item") → named frame ⚠️
+  - Raw frame/group with a generic name ("Frame 12", "Group 7", "Rectangle") → unnamed 🔴
+  - Detached instance (shows no componentId) → detached 🟡
+
+Compute:
+  total_layers = all non-hidden layers
+  component_pct = (named component instances / total_layers) × 100
+  unnamed_pct = (unnamed layers / total_layers) × 100
+
+Thresholds:
+  component_pct ≥ 60% → ✅ Healthy component usage
+  component_pct 30–59% → 🟡 Partial — some components, many one-offs
+  component_pct < 30% → 🔴 Low — mostly raw layers, not using a component system
+
+Show the Component Health line in the report header (always, on Figma audits):
+  "Component health: 68% component coverage · 4 detached instances · 12 unnamed layers"
+
+Flag as issues:
+  unnamed_pct > 20% → 🟡 "High proportion of unnamed layers ([N]) — slows handoff and makes edits harder"
+  detached_instances > 0 → 🟡 "N detached component instances — updates to the main component won't propagate"
+  component_pct < 30% → 🔴 "Low component coverage ([N]%) — most elements are raw frames, not reusable components"
+```
 
 ### F3: Get a Screenshot
 Call `get_screenshot` on the same node. Essential — context data alone misses visual issues like crowding, poor contrast, or bad hierarchy.
@@ -295,6 +361,223 @@ Declare confidence based on input type, then **change audit behaviour accordingl
 
 ---
 
+## Step 1.6: Code Input Extraction (HTML / CSS / React / Vue)
+
+When the input is code (not a Figma file), extract audit data using this parallel spec. This ensures the Type Scale Stack, component health, consistency checks, and microcopy analysis all work on code input — not just Figma.
+
+### Code Audit Scope Selector
+
+Before extracting values, check the size and nature of the input:
+
+```
+If input is a single component file (< 150 lines):
+  → Proceed directly with full audit. No need to ask.
+
+If input is a large file or multiple files (150+ lines or 3+ files):
+  → Present scope widget before auditing:
+    question: "This is a large codebase — what should I focus on?"
+    type: multi_select
+    options:
+      "Full audit — everything / 전체 감사"
+      "Accessibility only (Cat 6, 7) / 접근성"
+      "Design tokens & consistency (Cat 5, 17) / 토큰 & 일관성"
+      "Responsive & layout (Cat 3, 10) / 반응형 & 레이아웃"
+      "Typography & color (Cat 1, 2) / 타이포그래피 & 색상"
+      "Motion & states (Cat 8, 11) / 모션 & 상태"
+
+If the user has already indicated focus in their message
+(e.g. "check the accessibility", "is the contrast ok"):
+  → Skip the widget, infer the scope, note it in the report header.
+```
+
+State the audit scope at the top of the report under the REPORT HEADER:
+- English: `"Scope: [selected categories] — [N] files, ~[N] lines"`
+- Korean: `"범위: [선택된 카테고리] — [N]개 파일, 약 [N]줄"`
+
+### Framework Detection — Do This First
+
+Before extracting any values, identify the framework. This changes how values are extracted and how fixes are written.
+
+```
+Signals to look for:
+
+  HTML/CSS (vanilla)
+    → <div>, <button>, <input> tags with class="" or style=""
+    → Standalone .css or .html files
+    → No import statements or JSX syntax
+
+  React / JSX
+    → import React / import { useState } / import { ... } from ...
+    → JSX syntax: <Component />, className=, onClick=
+    → .jsx or .tsx file extension
+    → Possible: styled-components, CSS modules, inline styles
+
+  Vue
+    → <template>, <script setup>, <style scoped> blocks
+    → v-bind, v-model, :class, @click directives
+    → .vue file extension
+
+  Tailwind CSS (any framework)
+    → className / class values with utility prefixes:
+      text-*, bg-*, p-*, m-*, gap-*, rounded-*, border-*, font-*, leading-*
+    → Often combined with React or Vue
+
+  CSS-in-JS (styled-components / emotion)
+    → const Wrapper = styled.div`...`
+    → css`...` template literals
+    → Values are in JS template strings, not CSS files
+
+  CSS custom properties / design tokens
+    → var(--token-name) in CSS values
+    → :root { --color-primary: #... } definitions
+
+Declare the detected framework at the top of the audit:
+  "Detected: React + Tailwind CSS"
+  "Detected: Vue 3 (Composition API) + CSS Modules"
+  "Detected: Vanilla HTML/CSS"
+
+This declaration affects:
+  - How values are extracted (see per-category specs below)
+  - How fixes are written (Tailwind class swaps vs CSS property changes vs JSX prop changes)
+  - Which categories get code-specific superpower checks (see Cat 6, 8, 9, 13, 17)
+```
+
+### Typography extraction from code
+```
+Collect all unique font-size values across the codebase/component:
+  - CSS: font-size declarations (px, rem, em)
+  - React/Vue: inline styles, className references to utility classes (e.g. text-sm, text-lg)
+  - Convert rem to px (base 16px unless overridden): 1rem = 16px, 0.875rem = 14px
+
+Map to roles by relative size and frequency (same logic as Figma):
+  - Largest → heading, next → subheading, most-frequent → body, smallest → caption
+
+Check against typography.md rules and flag issues.
+Trigger Type Scale Stack widget with extracted sizes — same as Figma path.
+```
+
+### Color extraction from code
+```
+Collect all color values:
+  - CSS: color, background-color, border-color (hex, rgb, hsl, var(--token))
+  - Tailwind: color utility classes (text-gray-900, bg-white, border-blue-500)
+  - CSS variables: resolve var(--color-x) to actual hex if defined in the file
+
+For each foreground/background pair visible in context:
+  - Run WCAG luminance contrast check (same algorithm as F3.5)
+  - Trigger Contrast Checker widget if any pair fails
+
+Hardcoded values (not var(--token)) → flag for Cat 17 (token coverage)
+```
+
+### Spacing extraction from code
+```
+Collect spacing values:
+  - CSS: padding, margin, gap, width, height in px
+  - Tailwind: spacing utility classes (p-4 = 16px, m-3 = 12px, gap-2 = 8px)
+
+Tailwind spacing scale: 1 unit = 4px. So p-4 = 16px ✅, p-3 = 12px ✅, p-[13px] = off-grid 🟡.
+
+Check for off-grid values (not multiples of 4). Trigger 8pt Grid Visualizer widget on first offender.
+```
+
+### Component health from code
+```
+Instead of layer tally, assess structural patterns:
+  - Are UI elements defined as reusable components/functions? (React: <Button>, Vue: <BaseInput>) → ✅
+  - Are there inline one-off HTML structures with no component wrapper? → 🟡
+  - Count unique component definitions vs total render instances
+
+If the input is a single component file (not an app):
+  - Note "Single component input — cross-file component coverage cannot be assessed"
+  - Audit the internal structure for prop hygiene, named slots, etc.
+```
+
+### Microcopy extraction from code
+```
+Collect all string literals that appear in the UI:
+  - Button children: <button>Submit</button>, <Button>OK</Button>
+  - Input placeholders: placeholder="Enter email"
+  - Labels: <label>First name</label>
+  - Error strings: "Invalid input", "Required"
+  - Empty state text
+
+Apply the same per-role checks as Cat 12. Cite line numbers instead of node IDs:
+  🟡 placeholder="eg: 5" (line 47) — informal prefix. Use e.g. 5 or a unit hint.
+```
+
+### 2-frame comparison from code
+```
+If the user shares 2+ component files or code snippets in the same session:
+  - Extract and compare button border-radius, primary color, body font-size across files
+  - Flag cross-file inconsistencies the same way as the Figma 2-frame compare
+```
+
+---
+
+## Step 1.7: Code Fix Output Format
+
+When the input is code, fixes must be output as actual before/after code diffs — not descriptions. This is the code equivalent of F5 (Figma fix loop).
+
+### Fix format rules
+
+**Always output diffs in this format for every code fix:**
+
+```
+Issue: [issue description]
+File: [filename or "component" if single file] · Line [N] (if known)
+
+Before:
+  [exact original code — 1–5 lines of context]
+
+After:
+  [corrected code with the fix applied]
+
+Why: [one-sentence reason referencing the rule]
+```
+
+**Framework-aware fix output:**
+
+```
+Vanilla CSS fix:
+  Before: padding: 13px;
+  After:  padding: 12px;   /* snapped to 4pt grid */
+
+Tailwind fix:
+  Before: className="p-[13px]"
+  After:  className="p-3"  /* 12px — nearest grid value */
+
+React inline style fix:
+  Before: style={{ padding: 13 }}
+  After:  style={{ padding: 12 }}
+
+CSS custom property fix (prefer this over hardcoded):
+  Before: color: #8a8a8a;
+  After:  color: var(--color-text-secondary);
+
+Aria fix:
+  Before: <img src="logo.png" />
+  After:  <img src="logo.png" alt="Company logo" />
+
+Focus style fix:
+  Before: button:focus { outline: none; }
+  After:  button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+```
+
+**Fix grouping:** When the same issue repeats across lines, show one representative diff and note the others:
+```
+  Fix shown for line 23. Apply the same pattern to lines 31, 47, 89.
+```
+
+**When to offer a fix loop:**
+After completing the audit report, if there are 🔴 Critical issues, offer:
+- English: *"Want me to output corrected code for all critical issues?"*
+- Korean: *"모든 중요 문제에 대한 수정된 코드를 출력해 드릴까요?"*
+
+If yes → output diffs for every critical in severity order, then warnings if requested.
+
+---
+
 ## Step 2: Run the Design Audit
 
 Check each category. Skip clearly inapplicable ones. Mark each issue:
@@ -326,7 +609,29 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Text contrast** — WCAG AA: 4.5:1 for normal text, 3:1 for large text (18px+).
 - [ ] **Alignment** — Don't randomly mix left-aligned and center-aligned body text.
 
-**→ Widget trigger:** If any typography issue is found, use the Visualizer to render the **Type Scale Stack** widget. Pass the detected font sizes and their roles (h1, h2, body, caption etc.) as data. Renders each size at actual scale, flags duplicate sizes, ratios too close to distinguish, and body text below minimum. Introduce with one sentence in the user's detected language:
+**→ Widget trigger:** Always attempt to trigger the **Type Scale Stack** widget on Figma or code input — do not wait for a typography issue to be found first. Extract all font sizes from `get_design_context` data directly:
+
+```
+From get_design_context, collect all unique fontSize values across all text nodes.
+Map each size to its likely role based on relative size and usage frequency:
+  - Largest 1–2 sizes → heading (h1, h2)
+  - Mid-range sizes → subheading / label (h3, h4, label)
+  - Most frequent size → body
+  - Smallest sizes → caption / helper
+
+Then check:
+  - Any body text fontSize < 14 → 🔴 Critical
+  - Two sizes within 2px of each other → 🟡 Warning (too close to distinguish)
+  - Same fontSize used for visually different roles → 🟡 Warning (relies on weight alone)
+  - No size below 12px → ✅
+  - Scale ratio between adjacent levels (e.g. body→h2) < 1.2 → 🟡 Warning (too flat)
+  - More than 5 distinct font sizes → 🟡 Warning (scale too complex)
+
+Pass the collected sizes and roles as data to the widget.
+If get_design_context returns no text nodes or fontSize data, skip the widget silently.
+```
+
+Introduce with one sentence in the user's detected language:
 - English: *"Here's how your type scale stacks up visually."*
 - Korean: *"타입 스케일을 시각적으로 확인해 보세요."*
 
@@ -385,6 +690,26 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Contextual radius** — Modals/sheets anchored to screen edges should have rounded top corners, square bottom. Floating elements fully rounded.
 - [ ] **Interaction states** — Hover, active, disabled states all visually distinct.
 
+**2-frame consistency compare mode:**
+When the audit session has 2+ frames audited (e.g. file has multiple pages, or the user shares a second frame for comparison), automatically cross-check these values between frames:
+
+```
+Cross-frame checks (run silently, report only mismatches):
+  - Button corner radius: same value on both frames?
+  - Primary button fill color: same hex/token?
+  - Body font size: same value?
+  - Input field height: same?
+  - Primary heading font weight: same?
+  - Icon style: outline vs filled — consistent?
+
+Report cross-frame inconsistencies as:
+  🟡 Warning: "[Property] differs between frames: [Frame A] = [value], [Frame B] = [value]"
+  Example: "Button corner radius: 8px on NTIR form, 4px on Dashboard screen — pick one."
+
+Only run cross-frame checks when you have context data for 2+ frames in the session.
+Single-frame audits skip this silently — do not mention it.
+```
+
 ---
 
 ### CATEGORY 6: Accessibility (A11y / WCAG)
@@ -398,6 +723,42 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Motion sensitivity** — Animations respect `prefers-reduced-motion`.
 - [ ] **Link clarity** — Links distinguishable from text by more than color alone.
 
+**📋 Code input: deeper checks available (run these automatically)**
+```
+When auditing HTML/React/Vue code, check directly:
+
+  aria-label / aria-labelledby
+    → Every <button> or <a> without visible text must have aria-label
+    → Icon buttons: <button aria-label="Close"><Icon /></button> ✅
+    → Missing: <button><Icon /></button> → 🔴 Critical
+
+  alt attributes on <img>
+    → <img src="..." /> (no alt) → 🔴 Critical
+    → <img src="..." alt="" /> (decorative, intentional empty) → ✅
+    → <img src="logo.png" alt="Company logo" /> → ✅
+
+  focus styles
+    → button:focus { outline: none } or *:focus { outline: none } → 🔴 Critical
+    → :focus-visible with visible outline → ✅
+    → Search for outline: none / outline: 0 across all CSS
+
+  role attributes
+    → Custom interactive elements (<div onClick=...>) missing role="button" → 🟡
+    → Landmark roles present: role="main", role="nav", role="complementary" → ✅
+
+  tabIndex misuse
+    → tabIndex > 0 on any element → 🟡 (breaks natural tab order)
+    → tabIndex="-1" on programmatically focused elements → ✅
+
+  input label association
+    → <input id="email" /> must have <label for="email"> or aria-label → 🔴 if missing
+    → Placeholder-only inputs → 🔴
+
+  Color contrast (code path)
+    → Extract foreground/background pairs from CSS, run WCAG check programmatically
+    → More precise than visual estimate — cite exact ratio
+```
+
 ---
 
 ### CATEGORY 7: Forms & Inputs
@@ -410,6 +771,48 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Field grouping** — Related fields visually grouped (less space within, more between groups).
 - [ ] **Submit button state** — Loading state while submitting. Disable after first click.
 
+**📋 Code input: direct checks available (run these automatically)**
+```
+input type correctness:
+  → <input type="text"> for email → 🟡 should be type="email"
+  → <input type="text"> for password → 🔴 should be type="password"
+  → <input type="text"> for phone → 🟡 should be type="tel"
+  → <input type="text"> for numbers → 🟡 should be type="number" or inputMode="numeric"
+  → <input type="text"> for URLs → 🟡 should be type="url"
+  → <input type="submit"> instead of <button type="submit"> → 🟢 Tip (button is more styleable)
+
+autocomplete attributes:
+  → Name fields missing autocomplete="name" / autocomplete="given-name" → 🟡
+  → Email fields missing autocomplete="email" → 🟡
+  → Password fields missing autocomplete="current-password" or "new-password" → 🟡
+  → Credit card fields missing autocomplete="cc-number" etc. → 🟡
+  → Cite the field and the missing value
+
+required + aria-required:
+  → <input required> without aria-required="true" → 🟢 Tip (redundant but explicit for AT)
+  → Required inputs with no visual indicator (* or "(required)" label) → 🟡
+
+aria-describedby for error messages:
+  → Error message element exists but not linked via aria-describedby on its input → 🟡
+  → Correct: <input aria-describedby="email-error"> ... <span id="email-error">...</span>
+
+fieldset + legend for grouped inputs:
+  → Radio groups or checkbox groups without <fieldset><legend> → 🟡
+  → Only one radio/checkbox option → skip this check
+
+inputMode for mobile keyboards:
+  → Numeric inputs missing inputMode="numeric" or inputMode="decimal" → 🟢 Tip
+  → This triggers the correct soft keyboard on mobile
+
+novalidate + custom validation:
+  → <form> without novalidate when custom validation JS exists → 🟡 (browser + custom = double errors)
+  → <form novalidate> with no custom validation JS visible → 🟡 (validation silently disabled)
+
+disabled vs readonly:
+  → <input disabled> when the intent is read-only display → 🟢 Tip
+    (disabled excludes from form submission; readonly keeps the value but prevents editing)
+```
+
 ---
 
 ### CATEGORY 8: Motion & Animation
@@ -421,6 +824,34 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Reduced motion** — Non-animated version for `prefers-reduced-motion` users.
 - [ ] **No infinite autoplay loops** — Distract and exhaust users. Pause after 3 loops or on hover.
 
+**📋 Code input: direct checks available (run these automatically)**
+```
+prefers-reduced-motion:
+  → Search for @media (prefers-reduced-motion: reduce) in all CSS/styled-components
+  → If any animation or transition exists and no reduced-motion query found → 🔴 Critical
+  → Correct pattern:
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+animation-duration values:
+  → Extract all transition: and animation: duration values
+  → > 500ms on a UI interaction (not page transition) → 🟡 Warning
+  → > 1000ms on anything except intentional loading → 🔴 Critical
+  → linear easing on transitions → 🟡 (cite the property and value)
+
+animation-iteration-count:
+  → infinite on any element without a pause/hover mechanism → 🟡 Warning
+  → Cite element selector and property
+
+CSS transition on all properties:
+  → transition: all ... → 🟡 Warning (causes jank, prefer specific properties)
+  → transition: color 200ms ease-out → ✅
+```
+
 ---
 
 ### CATEGORY 9: Dark Mode (if applicable)
@@ -431,6 +862,36 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Shadow replacement** — Use lighter surface colors for elevation instead of shadows.
 - [ ] **Icon & image legibility** — Icons/images still readable on dark backgrounds.
 
+**📋 Code input: direct checks available (run these automatically)**
+```
+Detect if dark mode is implemented:
+  → Search for @media (prefers-color-scheme: dark) in CSS
+  → Search for [data-theme="dark"] or .dark selector patterns
+  → Search for dark: utility prefix (Tailwind dark mode)
+  → If any: audit dark mode implementation. If none: note as 🟢 Tip if product likely needs it.
+
+If dark mode is found, check:
+
+  Color swap pattern:
+    → ✅ Good: CSS custom properties swapped in dark media query
+        :root { --bg: #ffffff; --text: #111111; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #1a1a1a; --text: #f0f0f0; } }
+    → 🔴 Bad: Separate hardcoded hex values in dark selectors (token system is broken)
+        .dark .card { background: #1c1c1c; color: #ffffff; } ← hardcoded
+
+  Pure black backgrounds:
+    → background: #000000 or bg-black in dark mode → 🟡 Warning
+    → Prefer #0f0f0f–#1e1e1e range for depth
+
+  Contrast in dark mode:
+    → Run WCAG check on dark mode color pairs too (not just light mode)
+    → Dark mode often passes light mode checks but fails its own
+
+  Tailwind dark mode:
+    → Check if darkMode: 'class' or 'media' is configured
+    → Inconsistent dark: prefix usage across components → 🟡
+```
+
 ---
 
 ### CATEGORY 10: Responsive & Adaptive
@@ -440,6 +901,51 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Mobile touch targets** — Bigger targets and more spacing than desktop.
 - [ ] **Image scaling** — Images scale without awkward cropping or overflow.
 - [ ] **Type scaling** — Large desktop headings (48px) scaled down to 28–32px on mobile.
+
+**📋 Code input: direct checks available (run these automatically)**
+```
+Breakpoint coverage:
+  → Collect all @media queries in CSS/styled-components/Tailwind
+  → If only one breakpoint found (or none) → 🟡 Warning
+  → If no mobile-first breakpoints (min-width) → 🟡 (desktop-first with max-width is harder to maintain)
+  → Tailwind: check for sm:, md:, lg:, xl: prefix usage — missing sm: on any layout element → 🟡
+  → Flag the specific elements that have no responsive variant
+
+Fixed-width traps:
+  → width: [value]px on containers (not icons or images) → 🟡 (use max-width or %)
+  → Fixed pixel widths > 480px with no responsive override → 🔴 (will overflow on mobile)
+  → min-width values that exceed mobile viewport (320px) → 🟡
+
+Overflow risks:
+  → overflow: hidden on a container without a max-width → 🟡 (clips content on small screens)
+  → Long unbreakable strings: no word-break or overflow-wrap rule on text containers → 🟡
+  → white-space: nowrap on text that could be long → 🟡
+
+Image responsiveness:
+  → <img> without max-width: 100% or w-full → 🟡 (overflows container on small screens)
+  → <img> with fixed width/height attributes and no CSS override → 🟡
+  → Missing srcset or sizes attributes on large hero images → 🟢 Tip (performance)
+  → object-fit missing on images inside fixed-height containers → 🟡
+
+Viewport meta tag (HTML only):
+  → Missing <meta name="viewport" content="width=device-width, initial-scale=1"> → 🔴 Critical
+    (without this, mobile browsers render at desktop width)
+
+Font size on mobile:
+  → body font-size < 16px with no responsive override → 🟡
+    (iOS Safari auto-zooms on inputs with font-size < 16px)
+  → Input font-size < 16px → 🟡 (triggers zoom on focus on iOS)
+
+Tailwind responsive audit:
+  → Elements using fixed Tailwind width classes (w-96, w-80) without sm:/md: override → 🟡
+  → Text size classes without responsive scaling (text-5xl with no sm:text-3xl) → 🟡
+  → hidden / flex / block classes without responsive context → note if suspicious
+
+Viewport units:
+  → height: 100vh on mobile without dvh fallback → 🟡
+    (100vh includes browser chrome on mobile, causing content to be hidden)
+  → Correct: height: 100dvh (dynamic viewport height) or min-height: 100svh
+```
 
 ---
 
@@ -463,14 +969,34 @@ Never just show the final number. The breakdown makes the score feel earned and 
 ### CATEGORY 12: Content & Microcopy
 *The words inside a UI are part of the design. Read `references/microcopy.md` for full guidance.*
 
-- [ ] **Button labels are verbs** — Buttons should say what they *do*: "Save Changes", "Send Message", "Delete Account" — not "OK", "Submit", or "Yes".
-- [ ] **Error messages are human** — "Invalid input" is not helpful. "Please enter a valid email address" is. Errors should say what went wrong and how to fix it.
-- [ ] **Placeholder text is not a label** — Placeholders like "Enter your email" disappear on typing. They can hint at format (e.g., "name@example.com") but never replace a label.
-- [ ] **Destructive actions are explicit** — "Delete" dialogs should name what's being deleted: "Delete 'Project Alpha'? This can't be undone." Never just "Are you sure?"
-- [ ] **Consistent terminology** — Don't call the same thing "workspace", "project", and "board" interchangeably. Pick one word and use it everywhere.
-- [ ] **Tone consistency** — If the UI is friendly and casual in some places but cold and technical in others, it feels broken. Pick a tone and maintain it.
-- [ ] **No lorem ipsum in shipped designs** — Placeholder text must be replaced before handoff. Real content often reveals layout problems that lorem ipsum hides.
-- [ ] **Empty states have personality** — "No results found" is forgettable. "Looks like nothing's here yet — add your first task to get started!" is memorable and helpful.
+**On Figma/code input: read every text node.** `get_design_context` returns all text content. Extract and check each one — do not guess. Group them by role:
+
+```
+Text content extraction (Figma + code):
+  1. Collect all text node values from get_design_context
+  2. Classify each by role:
+     - CTA buttons: text nodes inside button components
+     - Labels: text nodes associated with inputs (above/beside)
+     - Placeholders: text nodes with placeholder-style content ("Search", "Enter...", "eg:")
+     - Error messages: text nodes near error states or with error styling
+     - Empty state messages: text nodes in empty/zero-state frames
+     - Section headers / titles: largest text nodes in a section
+  3. Apply checks per role (see below)
+  4. Cite the exact text content and node ID in each issue
+     e.g. 🟡 "Placeholder 'eg: 5' (node 68:27994) — informal prefix. Use '0' or unit hint."
+```
+
+Per-role checks:
+- [ ] **Button labels are verbs** — "Save Changes", "Send Message" not "OK", "Submit", "Yes"
+- [ ] **Error messages are human** — "Invalid input" → 🔴. "Please enter a valid email" → ✅
+- [ ] **Placeholder ≠ label** — Placeholders hint at format (e.g. "name@example.com"), never replace a label. Flag any placeholder that duplicates its label exactly.
+- [ ] **Placeholder prefix style** — "eg:", "e.g." → 🟡 informal. Use the example value directly or a unit label.
+- [ ] **Destructive actions are explicit** — "Delete" dialogs should name what's being deleted. "Are you sure?" alone → 🟡
+- [ ] **Consistent terminology** — Flag if the same concept uses different words across text nodes (e.g. "workspace" and "project" used interchangeably)
+- [ ] **Tone consistency** — Formal in one section, casual in another → 🟡
+- [ ] **No lorem ipsum** — Any "lorem ipsum" or "placeholder text" string → 🔴 Critical at Dev handoff or later
+- [ ] **Empty states have direction** — "No results found" alone → 🟡. Should include a next action.
+- [ ] **Required field legend** — If * is used for required fields, check for a "* Required fields" legend somewhere in the frame. Missing → 🟢 Tip.
 
 ---
 
@@ -485,6 +1011,36 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **Currency & units** — Symbol position and decimal separators differ by locale (€1,234.56 vs 1.234,56 €). Never assume.
 - [ ] **No text in images** — Images with embedded text can't be translated. Use CSS overlays or separate text layers instead.
 - [ ] **Font support** — Does the chosen font support all target scripts? Latin fonts won't render Arabic or CJK characters — a system fallback font will kick in and look inconsistent.
+
+**📋 Code input: direct checks available (run these automatically)**
+```
+Hardcoded string detection:
+  → Scan all JSX/template content for bare string literals inside UI elements
+  → <button>Submit</button> when no i18n wrapper → 🟡 if i18n is likely needed
+  → <p>No results found</p> hardcoded → 🟡
+  → Compare against: t('key'), i18n.t('key'), $t('key'), <FormattedMessage id="..."/> — these are ✅
+  → Only flag as 🔴 if evidence of multi-language intent exists (e.g. i18n library imported but some strings not wrapped)
+
+RTL CSS properties:
+  → margin-left / margin-right / padding-left / padding-right / text-align: left → 🟡 if RTL needed
+  → margin-inline-start / padding-inline-end / text-align: start → ✅ logical properties
+  → position: absolute with left: / right: without RTL override → 🟡
+
+Intl API usage:
+  → Hardcoded date formats like "MM/DD/YYYY" or toLocaleDateString() without locale → 🟡
+  → new Intl.DateTimeFormat(locale, options) → ✅
+  → Hardcoded currency symbols ($, €) outside of a locale formatter → 🟡
+
+dir attribute:
+  → Check for dir="rtl" implementation pattern on root or document
+  → CSS [dir="rtl"] selectors for flip overrides → ✅
+
+Only run this category if:
+  - An i18n library is imported (react-i18next, vue-i18n, next-intl, etc.), OR
+  - The user explicitly asks for i18n review, OR
+  - The file contains non-English strings
+  Otherwise: skip silently.
+```
 
 ---
 
@@ -542,6 +1098,39 @@ Never just show the final number. The breakdown makes the score feel earned and 
 - [ ] **No magic numbers** — Any value that appears more than twice should be a token. Repeated one-off values are a sign the token system isn't being used.
 - [ ] **Dark mode uses the same tokens** — Dark mode should swap token values, not introduce new hardcoded colors. If dark mode components have their own hex values, the token system is broken.
 
+**📋 Code input: direct token audit available (run automatically — most precise path)**
+```
+CSS custom property audit:
+  → Find all :root { --token: value } definitions — these are the token system
+  → Find all var(--token) usages in component CSS
+  → Find all hardcoded values (hex, rgb, px) NOT using var()
+
+  Compute per-category coverage:
+    color_coverage    = var(--color-*) usages / total color declarations × 100
+    spacing_coverage  = var(--spacing-*) / total padding/margin/gap × 100
+    radius_coverage   = var(--radius-*) / total border-radius × 100
+    shadow_coverage   = var(--shadow-*) / total box-shadow × 100
+
+  Report as: "Token coverage: colors 80% · spacing 60% · radius 40% · shadows 20%"
+  Any category < 50% → 🟡 Warning
+  Any category < 20% → 🔴 Critical (token system not being used)
+
+JS/TS theme object audit (styled-components / emotion / MUI):
+  → Detect theme.colors.*, theme.spacing(), theme.shadows[] usage
+  → Hardcoded values inside styled components: color: '#7c3aed' → 🟡
+  → theme.colors.primary → ✅
+
+Tailwind token audit:
+  → Tailwind config colors/spacing/borderRadius/boxShadow → these are the tokens
+  → Arbitrary values like bg-[#7c3aed], p-[13px], rounded-[7px] → each is 🟡
+  → Standard scale values (bg-purple-600, p-3, rounded-lg) → ✅
+
+Token naming check:
+  → --color-red: #ff0000 (describes appearance) → 🟡 rename to --color-error or --color-danger
+  → --color-error: #ff0000 (describes purpose) → ✅
+  → Tokens with numeric suffixes only (--color-500) without semantic alias → 🟢 Tip
+```
+
 ---
 ## Step 3: Score & Report
 
@@ -556,6 +1145,33 @@ Start at **100 points**. Deduct for every issue found:
 | 🟢 Tip | **-1 point** | Deprecated attribute, minor naming improvement |
 
 **Floor is 0** — score never goes negative.
+
+### Issue Deduplication — Required
+
+When the same problem appears across multiple nodes, **never list it multiple times**. Deduplicate into a single issue entry with an exact count and node ID list.
+
+```
+Rule: If the same root cause affects N nodes → one issue entry, not N entries.
+
+Format:
+  🔴 [Issue name] — affects N nodes
+  Nodes: [id1], [id2], [id3] (+ N more if >5 — list first 5 only)
+  Fix: [single fix that resolves all instances]
+
+Examples:
+  ✅ Good: "Off-grid column width (60.17px) — 3 nodes: 456:49851, 456:49873, 456:49895"
+  ❌ Bad:  "Column 5 off-grid" + "Column 10 off-grid" + "Column 11 off-grid" (3 separate entries)
+
+  ✅ Good: "Input field missing Error state — 10 nodes: 68:27912, 68:27927, 68:27943 (+7 more)"
+  ❌ Bad:  Listing each input as a separate critical issue
+
+Deduplication also applies to scoring:
+  A repeated issue (same root cause, N nodes) counts as ONE issue for deduction purposes.
+  Exception: if fixing each instance requires a separate action (different values, different
+  components), count each as separate — but still group them visually in the report.
+```
+
+This keeps reports scannable. A report with 3 grouped issues is more actionable than one with 15 separate entries that all say the same thing.
 
 ### Accessibility Score
 In addition to the overall score, always surface a separate **Accessibility Score** combining Categories 2, 6, 7, and 16:
@@ -581,63 +1197,126 @@ Scoring bands:
 
 ### Strict Output Template
 
-Always use this exact structure — no exceptions:
+Every audit report must use this exact structure — no exceptions, no reordering. Sections marked *(always)* appear on every audit. Sections marked *(conditional)* appear only when applicable.
 
+---
+
+#### REPORT HEADER *(always)*
 ```
-## Design Audit Report
+## 🔍 Design Audit Report
 
-**Audit confidence:** [🟢 High / 🟡 Medium / 🔴 Low] ([reason])
+**Input:** [Figma file name / component name / "Pasted HTML" / "React component"]
+**Type:** [Figma MCP / HTML / React / Vue / Screenshot]
+**Framework:** [detected framework — e.g. "React + Tailwind CSS"] *(code input only)*
+**Confidence:** [🟢 High / 🟡 Medium / 🔴 Low] — [one-sentence reason]
+**Scope:** [Frame name + page, OR filename, OR "Single component"]
 
+*(Figma only — when 2+ pages exist)*
+**File:** [N] pages — auditing '[page name]' (page [N] of [N])
+
+*(Figma only — always)*
+**Component health:** [N]% coverage · [N] detached instances · [N] unnamed layers
+
+*(Code only — always)*
+**Token coverage:** colors [N]% · spacing [N]% · radius [N]% · shadows [N]%
+
+*(Medium confidence only)*
+⚠️ **Medium confidence audit** — input was a screenshot. Values are estimated. For an exact
+audit, share the Figma file or component code.
+```
+
+---
+
+#### SCORES *(always)*
+```
 ### Overall Score: [X/100]
-**Score breakdown: 100 − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]**
-[One sentence rationale — what dragged the score down most.]
+**100 − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]/100**
+[One sentence — what dragged the score down most.]
+
+### Accessibility Score: [X/100]  *(Categories 2, 6, 7, 16)*
+[Band label: WCAG compliant / minor gaps / significant gaps / failing]
 
 ### Score by Category
 | Category | Score | Issues |
 |---|---|---|
 | Typography | X/10 | 1 🔴, 0 🟡 |
 | Color & Contrast | X/10 | 0 🔴, 2 🟡 |
-| Spacing & Layout | X/10 | ... |
-| [other relevant categories] | X/10 | ... |
-*(Only include categories that were audited)*
+| [other audited categories] | X/10 | ... |
+*(Only include categories that were audited. Skip clearly N/A ones.)*
+```
 
 ---
 
+#### ISSUES *(always — follow deduplication rules)*
+```
 ### 🔴 Critical Issues (−8pts each)
-- **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
-  *Want me to fix this now? I can edit the code/Figma directly.*
+- **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
+  Why: [One sentence rule reference]
+  *Nodes: [id1], [id2] (+N more)* *(Figma)* / *Line [N]* *(code)*
+  → Want me to fix this? I can apply it directly.
 
 ### 🟡 Warnings (−4pts each)
-- **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
-  *Want me to fix this now? I can edit the code/Figma directly.*
+- **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
+  Why: [One sentence rule reference]
 
 ### 🟢 Tips (−1pt each)
-- **[Issue name]**: [What's wrong] → Fix: [Specific how-to] → Why: [One sentence]
+- **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
+```
 
 ---
 
+#### POSITIVES *(always — min 2, max 4)*
+```
 ### ✅ What's Working Well
-[2–3 specific genuine positives. Builds design instincts.]
+- [Specific genuine positive — not generic praise]
+- [Specific genuine positive]
+```
 
-### 🎯 Issue Priority Matrix
-After listing all issues, use the Visualizer to render the **Issue Priority Matrix** widget instead of a static "Top 3 fixes" list. Plot every issue found as a dot using these effort/impact scores:
+---
 
-**Effort heuristics (1–10):**
-- 1–2: Change a single value (color, size, spacing)
-- 3–4: Rework one component or add one new state
-- 5–6: Refactor multiple components or implement a system change
-- 7–9: Architectural change (token system overhaul, full responsive pass)
+#### CROSS-FRAME INCONSISTENCIES *(conditional — only when 2+ frames audited)*
+```
+### ⚡ Cross-Frame Inconsistencies
+- **[Property]** differs: [Frame A] = [value] vs [Frame B] = [value]
+```
 
-**Impact heuristics (1–10):**
-- 9–10: Breaks accessibility or core usability (Critical issues)
-- 6–8: Meaningfully degrades experience (most Warnings)
-- 3–5: Polish-level improvement (minor Warnings, Tips)
-- 1–2: Cosmetic only
+---
+
+#### RE-AUDIT DELTA *(conditional — only on 2nd+ audit in session)*
+```
+### 📈 Progress Since Last Audit
+Score: [prev] → [current] ([+/−N] pts)
+✅ Fixed: [category] (+Npts), [category] (+Npts)
+🔴 Still open: [N] critical issues remaining
+New issues found: [N]
+```
+
+---
+
+#### REPORT FOOTER *(always)*
+```
+---
+*Audit run with Design Auditor Skill v1.2.2 · [input type] · [confidence level]*
+*Re-audit after fixes to track progress. / 수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
+```
+
+---
+
+After the report, immediately render:
+1. **Radar chart** (Step 3b) — always
+2. **Issue Priority Matrix widget** — always if 3+ issues
+3. **Severity filter widget** — if 5+ issues
+4. **"What next?" widget** (Step 4) — always
+
+**Issue Priority Matrix — effort/impact heuristics:**
+
+Effort (1–10): 1–2 = single value change · 3–4 = one component rework · 5–6 = multi-component refactor · 7–9 = architectural change
+
+Impact (1–10): 9–10 = breaks a11y or core usability · 6–8 = degrades experience · 3–5 = polish-level · 1–2 = cosmetic
 
 Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Introduce with one sentence in the user's detected language:
 - English: *"Here's every issue mapped by how hard it is to fix versus how much it will improve the design — start in the top-left."*
 - Korean: *"발견된 모든 문제를 수정 난이도와 개선 효과 기준으로 매핑했습니다 — 왼쪽 위부터 시작하세요."*
-```
 
 ### Step 3b: Radar Chart Visualizer (always run after report)
 
@@ -722,11 +1401,76 @@ Never batch-apply all fixes at once without per-issue confirmation.
 
 **If "Fix a specific issue"** → present a widget listing all 🔴 and 🟡 issues by name, let the user pick one, then show the before/after diff and apply the fix.
 
+**If "Explain an issue"** → present a widget listing all issues found. When one is selected:
+- Explain what the rule is and why it exists (1–2 sentences)
+- Show a real-world example of what it looks like when broken vs fixed
+- Explain the impact on users (e.g. "users with low vision won't be able to read this")
+- Cite the specific rule from the relevant reference file
+- If beginner mode is active: use plain language with no assumed knowledge
+- If experienced mode: go deeper — cite WCAG success criterion, link to relevant spec
+
+**If "Re-audit"** → re-run the audit on the same input:
+```
+Scope for re-audit:
+  - Use the exact same scope as the original audit (same categories, same WCAG level)
+  - Do NOT re-ask settings unless the user explicitly requests a scope change
+  - State at the top: "Re-audit — same scope as Audit [N]"
+  - Show delta summary before the new report (see Re-audit delta section in Strict Output Template)
+  - Only list issues that changed — resolved, newly found, or worsened
+  - Unchanged issues from the previous audit: do not re-list, just note "N issues unchanged"
+
+If the user shares updated code or a new Figma link before selecting Re-audit:
+  → Use the new input automatically. Note: "Re-auditing updated version."
+```
+
 **If "Show session progress"** → render the session sparkline widget showing all audit scores in the current session, with issue count deltas per audit. Only show this option if 2+ audits have been run.
 
-**If "Developer handoff report"** → produce a clean markdown summary with: overall score, category table, critical issues only (with exact code fixes), and accessibility score. Format it as a copyable block the developer can paste into a PR or Notion doc.
+**If "Developer handoff report"** → produce a structured handoff document using this exact template:
 
-**If "Export report"** → create a downloadable `.md` file via file_create containing the full audit report.
+```
+# Developer Handoff — Design Audit
+**Component/Page:** [name]
+**Audit date:** [date]
+**Overall score:** [X/100] · Accessibility: [X/100]
+
+---
+
+## Critical fixes required before shipping
+
+| # | Issue | Location | Fix | Value |
+|---|---|---|---|---|
+| 1 | [issue name] | [node ID / line N] | [what to change] | [exact value] |
+
+## CSS / Token spec
+
+| Property | Current | Correct | Token |
+|---|---|---|---|
+| color | #999 | #666 | --color-text-secondary |
+| padding | 13px | 12px | --spacing-3 |
+| border-radius | 7px | 8px | --radius-md |
+
+## Accessibility checklist
+- [ ] [aria fix needed]
+- [ ] [focus state needed]
+- [ ] [label needed]
+
+## Warnings (non-blocking)
+- [warning 1]
+- [warning 2]
+
+## What's already correct
+- [positive 1]
+- [positive 2]
+
+---
+*Generated by Design Auditor Skill v1.2.2*
+```
+
+**If "Export report"** → create a downloadable `.md` file via file_create containing:
+- The full audit report in the Strict Output Template format
+- All widgets rendered as static markdown tables (scores, issue list, category breakdown)
+- The dev handoff section appended at the end
+- Filename: `design-audit-[component-name]-[date].md`
 
 Then respond based on their selection. If they dismiss the widget, fall back to a language-appropriate line:
 - English: *"Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."*
@@ -762,28 +1506,18 @@ color: #666;          /* 4.5:1 contrast on white */
 
 ---
 
-## Tone Guidelines
-
-- **Never condescending.** They're smart — they just haven't learned this yet.
-- **Always explain the "why."** One sentence is enough.
-- **Avoid jargon** unless the user uses it first.
-- **Be genuinely encouraging.** Real praise, not filler.
-- **Match their energy.** Casual question → relaxed tone. Formal request → structured response.
-
----
-
 ## Reference Files
 
-- `references/typography.md` — Font rules, sizing, line height, hierarchy
-- `references/color.md` — Contrast ratios, WCAG, palette guidance
+- `references/typography.md` — Font rules, sizing, line height, hierarchy, type scale algorithm
+- `references/color.md` — Contrast ratios, WCAG luminance formula, palette guidance
 - `references/spacing.md` — 8-point grid, layout, proximity rules
-- `references/figma-mcp.md` — Figma MCP workflow, safe editing patterns
-- `references/states.md` — Loading, empty, error, success & disabled state patterns
-- `references/microcopy.md` — Button labels, error messages, tone, terminology
+- `references/figma-mcp.md` — Figma MCP workflow, page structure, component health, safe editing patterns
+- `references/states.md` — Loading, empty, error, success & disabled state patterns + code checks
+- `references/microcopy.md` — Button labels, error messages, placeholder rules, per-role audit guide
+- `references/tokens.md` — Design token naming, two-tier system, token health scoring, dark mode architecture
 - `references/i18n.md` — Internationalization, RTL layout, locale-aware formatting
 - `references/corner-radius.md` — Nested radius rule, radius scale, size-proportional rounding
-- `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth
-- `references/iconography.md` — Icon families, optical sizing, touch targets, meaning
+- `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth, code shadow audit
+- `references/iconography.md` — Icon families, optical sizing, touch targets, meaning consistency
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
-- `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, anti-patterns
-- `references/tokens.md` - Design tokens, semantic naming, dark mode
+- `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming
