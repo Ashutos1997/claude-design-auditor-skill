@@ -180,3 +180,94 @@ font-size: clamp(3rem, 2rem + 5vw, 5rem);
 
 ### The Rule
 Fluid type should never drop below its minimum readable size. Always test `clamp()` values at the narrowest viewport you support.
+
+---
+
+## Type Scale Role-Mapping Algorithm (Type Scale Stack Widget)
+
+When the Type Scale Stack widget is triggered, font sizes must be classified into roles. Use this exact algorithm — do not guess:
+
+```
+Step 1: Collect all unique fontSize values from the design/code.
+  (For code: convert rem/em to px — see conversion table below)
+
+Step 2: Sort values descending (largest first).
+
+Step 3: Assign roles by relative position and frequency:
+  Position 1 (largest unique size, used rarely, 1–3 instances):
+    → h1 / Display
+
+  Position 2 (second largest, used a handful of times):
+    → h2 / Heading
+
+  Position 3 (if exists, mid-range, section-level):
+    → h3 / Subheading
+
+  Most frequent size overall (appears most across the design):
+    → body
+
+  Sizes between h3 and body (if gap exists):
+    → label / overline
+
+  Smallest unique size (used rarely, supporting text):
+    → caption / helper
+
+Step 4: Flag these automatically:
+  - Any body candidate < 14px → 🔴 Critical
+  - Any caption/helper < 11px → 🔴 Critical
+  - Two adjacent role sizes within 2px of each other → 🟡 (indistinct)
+  - Scale ratio between body and h2 < 1.25 → 🟡 (too flat — no clear hierarchy)
+  - More than 6 distinct font sizes in one frame/component → 🟡 (scale too complex)
+  - Same font size used for two different visual roles → 🟡 (relies on weight alone — fragile)
+
+Step 5: Pass extracted sizes + roles as data to the Type Scale Stack widget.
+  If no font size data found: skip widget silently — do not render with placeholder data.
+```
+
+---
+
+## Code Font Size Extraction
+
+### rem / em to px conversion
+Base: 16px (browser default). If the design sets a different root font-size, use that instead.
+
+| rem value | px equivalent |
+|---|---|
+| 0.625rem | 10px |
+| 0.6875rem | 11px |
+| 0.75rem | 12px |
+| 0.8125rem | 13px |
+| 0.875rem | 14px |
+| 0.9375rem | 15px |
+| 1rem | 16px |
+| 1.125rem | 18px |
+| 1.25rem | 20px |
+| 1.5rem | 24px |
+| 1.875rem | 30px |
+| 2rem | 32px |
+| 2.25rem | 36px |
+| 3rem | 48px |
+
+### Tailwind text-* class to px mapping
+| Class | Size |
+|---|---|
+| text-xs | 12px |
+| text-sm | 14px |
+| text-base | 16px |
+| text-lg | 18px |
+| text-xl | 20px |
+| text-2xl | 24px |
+| text-3xl | 30px |
+| text-4xl | 36px |
+| text-5xl | 48px |
+| text-6xl | 60px |
+| text-7xl | 72px |
+
+Collect all text-* classes in use, map to px, then run the role-mapping algorithm above.
+
+### clamp() fluid type audit
+When `clamp(MIN, PREFERRED, MAX)` is found:
+  → Extract MIN and MAX values
+  → Run role-mapping algorithm using MAX values (desktop)
+  → Separately verify MIN values are above minimums (body ≥ 14px, caption ≥ 11px)
+  → Flag if MIN drops below readable threshold even if MAX is fine

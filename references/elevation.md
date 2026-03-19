@@ -166,3 +166,84 @@ When auditing a Figma file:
 - [ ] Is there a defined shadow scale in the design system?
 - [ ] Are dark mode frames using surface colors instead of shadows?
 - [ ] Do interactive elements change shadow on hover/active?
+
+---
+
+## Code Shadow Audit Patterns
+
+When auditing CSS/styled-components/Tailwind for elevation consistency, check the following directly:
+
+### Hardcoded vs tokenized shadows
+```css
+/* ❌ Hardcoded — flag as 🟡 Warning */
+box-shadow: 0 3px 7px rgba(0,0,0,0.11);
+box-shadow: 0 2px 4px #00000020;
+
+/* ✅ Tokenized */
+box-shadow: var(--shadow-md);
+box-shadow: var(--shadow-card);
+```
+Rule: Any `box-shadow` value not referencing a CSS variable → 🟡 Warning (unless it's the token definition file itself).
+
+### Ratio rule check (blur ≈ 2× offset-y)
+```
+Extract offset-y and blur-radius from each box-shadow.
+ratio = blur / offset-y
+
+  ratio < 1.5 → 🟡 harsh/pixelated shadow (e.g. 0 4px 4px)
+  ratio 1.5–3 → ✅ grounded, realistic
+  ratio > 5   → 🟡 glow effect, not a shadow (e.g. 0 2px 40px)
+
+Example:
+  0 4px 8px → ratio 2.0 → ✅
+  0 4px 40px → ratio 10.0 → 🟡 looks like a glow
+  0 1px 1px → ratio 1.0 → 🟡 harsh
+```
+
+### Pure black shadow detection
+```
+Patterns to flag as 🟡:
+  rgba(0, 0, 0, 1)   — fully opaque black
+  rgba(0, 0, 0, 0.9) — near-opaque
+  #000000            — hex black in shadow
+  black              — keyword black
+
+Acceptable:
+  rgba(0, 0, 0, 0.05) through rgba(0, 0, 0, 0.20) — realistic opacity range
+```
+
+### Elevation level consistency
+```
+Cards:    should all share the same shadow value
+Modals:   should all share the same shadow value (stronger than cards)
+Tooltips: should all share the same shadow value (stronger than modals)
+
+If card A uses --shadow-sm and card B uses --shadow-lg → 🟡 inconsistent elevation
+Detect by collecting all box-shadow values on elements with similar class names
+(card, panel, modal, dialog, tooltip, popover, dropdown)
+```
+
+### Dark mode shadow detection
+```
+If @media (prefers-color-scheme: dark) or [data-theme="dark"] exists:
+  → Check if box-shadow values are still present in dark mode context
+  → Shadows on dark backgrounds are invisible → 🟡 Warning
+  → Preferred fix: remove shadows in dark mode, use surface color elevation instead
+
+Look for:
+  .dark .card { box-shadow: var(--shadow-md); } → 🟡 shadow in dark mode
+  .dark .card { background: var(--surface-1); } → ✅ surface elevation
+```
+
+### Tailwind shadow classes
+| Class | CSS equivalent | Level |
+|---|---|---|
+| shadow-sm | 0 1px 2px rgba(0,0,0,0.05) | Cards |
+| shadow | 0 1px 3px + 0 1px 2px | Raised elements |
+| shadow-md | 0 4px 6px + 0 2px 4px | Sticky headers |
+| shadow-lg | 0 10px 15px + 0 4px 6px | Dropdowns |
+| shadow-xl | 0 20px 25px + 0 8px 10px | Modals |
+| shadow-2xl | 0 25px 50px | Overlays |
+| shadow-none | none | Flat / dark mode |
+
+Mixing Tailwind shadow classes inconsistently across same-type elements → 🟡 Warning.

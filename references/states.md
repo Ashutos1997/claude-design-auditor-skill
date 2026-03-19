@@ -162,3 +162,93 @@ Success states close the loop — they tell the user "yes, it worked." Without t
 - [ ] Disabled state doesn't remove elements from the layout
 - [ ] Where possible, a tooltip explains why the element is disabled
 - [ ] `aria-disabled="true"` set for screen readers
+
+---
+
+## Code-Specific State Checks
+
+When auditing HTML/CSS/React/Vue, the following state implementations can be verified directly from code — do not guess from visual inspection alone.
+
+### Loading state
+```
+aria-busy attribute:
+  → <section aria-busy="true"> during loading → ✅
+  → Loading state with no aria-busy → 🟢 Tip
+
+Skeleton screen HTML pattern:
+  → <div class="skeleton" aria-hidden="true"> → ✅ (hidden from AT, decorative)
+  → Skeleton without aria-hidden → 🟢 Tip
+
+Button loading pattern:
+  → <button disabled aria-disabled="true"><Spinner /> Saving...</button> → ✅
+  → <button> still interactive during async action → 🔴 Critical (double-submit risk)
+```
+
+### Error state
+```
+aria-invalid:
+  → <input aria-invalid="true"> on a field with a validation error → ✅
+  → Error visible but aria-invalid missing → 🟡 Warning
+
+aria-describedby linking error message:
+  → <input aria-describedby="field-error"> ... <span id="field-error">...</span> → ✅
+  → Error message not linked via aria-describedby → 🟡 Warning
+
+role="alert" on dynamic errors:
+  → <div role="alert"> for errors injected after page load → ✅ (announced immediately)
+  → Errors injected into DOM without role="alert" or aria-live → 🟡 Warning
+```
+
+### Success state (toasts and confirmations)
+```
+aria-live on toast containers:
+  → <div aria-live="polite" aria-atomic="true"> wrapping toast area → ✅
+  → Toast visible in DOM but no aria-live → 🟡 Warning (screen readers miss it)
+  → role="status" is equivalent to aria-live="polite" → ✅
+
+Auto-dismiss timing:
+  → Toast dismissed < 2 seconds → 🟡 (too fast for screen readers to announce)
+  → Toast dismissed at 3–5 seconds → ✅
+  → Toast never auto-dismissed → 🟢 Tip (blocks UI permanently)
+```
+
+### Disabled state
+```
+aria-disabled vs disabled attribute:
+  → <button disabled> removes from tab order (correct for forms) → ✅
+  → <button aria-disabled="true"> keeps in tab order (better for explaining why) → ✅
+  → Interactive element visually greyed out with neither disabled nor aria-disabled → 🔴
+
+cursor: not-allowed:
+  → disabled elements missing cursor: not-allowed → 🟢 Tip
+  → pointer-events: none alone (without aria-disabled) → 🟡 (keyboard still activatable)
+
+Opacity for disabled visual:
+  → opacity: 0.5 or 0.4 on disabled elements → ✅
+  → opacity: 0.15 or lower → 🟡 (contrast too low, violates WCAG disabled contrast guideline)
+```
+
+### Empty state
+```
+Empty state detection in code:
+  → Conditional render: {items.length === 0 && <EmptyState />} → ✅
+  → Array renders with no empty state fallback → 🟡 Warning
+  → Search/filter result with no "no results" state → 🟡 Warning
+
+Empty state accessibility:
+  → Empty state illustration should have aria-hidden="true" (decorative)
+  → Heading inside empty state should be a proper <h> level, not <p> or <div>
+```
+
+### Focus state
+```
+outline: none / outline: 0 detection:
+  → Any global *:focus { outline: none } → 🔴 Critical
+  → :focus-visible { outline: none } → 🔴 Critical (still removes focus for keyboard users)
+  → :focus { outline: none } with :focus-visible alternative → ✅ (progressive enhancement)
+
+Focus ring visibility:
+  → :focus-visible with visible outline (2px solid, not just color change) → ✅
+  → Focus managed only via box-shadow (no outline) → 🟡 (Windows High Contrast Mode loses it)
+  → Recommended: outline: 2px solid var(--color-focus); outline-offset: 2px → ✅
+```

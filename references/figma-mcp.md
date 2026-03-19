@@ -44,7 +44,34 @@ output: { imageUrl: "..." }
 ```
 
 ### Tool: `get_design_pages`
-Use to see all pages in a Figma file. Helpful if the user says "check my whole file" — you can list pages and ask which to audit.
+Call this on the file key **before** auditing any node. Returns the list of all pages in the file.
+
+**Decision logic based on page count:**
+
+```
+1 page  → Proceed directly to get_design_context. No user prompt needed.
+
+2–5 pages → Note page names at the top of the audit report.
+            If user gave a specific node URL, audit that frame and note
+            which page it belongs to. Offer to audit other pages afterward.
+
+6+ pages → Present a page selection widget before auditing:
+           "This file has [N] pages — which would you like to audit?"
+           Options: [list of page names] + "Audit all pages"
+
+           If "Audit all pages" selected:
+             - Run get_design_context + get_screenshot on the top-level frame
+               of each page sequentially
+             - Score each page independently
+             - Produce a ranked summary at the end (worst score first)
+
+No node ID given (just file URL) → Always use get_design_pages first,
+                                    then present page selection widget.
+```
+
+**Report header line** (include whenever 2+ pages exist):
+- English: `"File: [N] pages — auditing '[page name]' (page [N] of [N])."`
+- Korean: `"파일: [N]개 페이지 — '[페이지 이름]' 감사 중 ([N]/[N])."`
 
 ### Tool: `get_metadata`
 Returns file-level info: title, last modified, owner. Use to confirm you're in the right file.
@@ -84,9 +111,28 @@ Look for:
 ### Component Health Checks
 ```
 Look for:
-- Layer names like "Frame 12", "Group 7", "Rectangle" → Red flag: not using components
-- Layer names like "Button/Primary/Hover" → Green flag: proper component system
-- Detached instances → Components used inconsistently
+- Layer names like "Frame 12", "Group 7", "Rectangle" → unnamed 🔴
+- Layer names like "Button/Primary/Hover" → named component instance ✅
+- Layer names like "Header", "Card Item" (frames, not components) → named frame ⚠️
+- Nodes with no componentId → detached instance or raw layer 🟡
+
+Tally all non-hidden layers in the frame:
+  component_pct  = (named component instances / total) × 100
+  unnamed_pct    = (unnamed layers / total) × 100
+  detached_count = number of detached instances
+
+Thresholds:
+  component_pct ≥ 60% → ✅ Healthy
+  component_pct 30–59% → 🟡 Partial
+  component_pct < 30%  → 🔴 Low coverage
+
+Always show in report header:
+  "Component health: [N]% coverage · [N] detached · [N] unnamed layers"
+
+Issue flags:
+  unnamed_pct > 20%     → 🟡 Warning
+  detached_count > 0    → 🟡 Warning
+  component_pct < 30%   → 🔴 Critical
 ```
 
 ---

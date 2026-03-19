@@ -93,8 +93,17 @@ Placeholders appear inside empty inputs and disappear when the user starts typin
 ### Rules
 - **Always have a visible label** in addition to placeholder text.
 - **Keep placeholders short** — one phrase, max.
-- **Use "e.g." prefix** for example values to make clear it's an example, not a required format.
+- **Prefix style** — When showing an example value, write it as `e.g. Project Alpha` (with a space after the period). Avoid `eg:`, `eg.`, or `E.g:` — these are informal and inconsistent. Flag as 🟡 Warning.
+- **Don't duplicate the label** — A placeholder that says exactly the same thing as its label adds no value. Use the placeholder for format hints or examples only.
 - **Placeholder contrast** should be noticeably lighter than real input text — but still meet 3:1 contrast for readability.
+
+### Citing Placeholder Issues in Audit Reports
+When flagging a placeholder issue, always cite:
+- The exact placeholder text (quoted)
+- The node ID if available from `get_design_context`
+- The specific rule it violates
+
+Example: 🟡 Placeholder `"eg: 5"` (node 68:27994) — uses informal `eg:` prefix. Use `e.g. 5` or just the unit hint.
 
 ---
 
@@ -184,3 +193,35 @@ Create a short glossary and stick to it. Every button, label, confirmation, and 
 - **Be specific** — name the thing that was acted on when possible.
 - **Offer undo** for destructive or hard-to-reverse actions.
 - **Don't celebrate too hard** — "🎉 Amazing! You saved a file!" is patronizing. Save enthusiasm for genuinely exciting moments (first project created, subscription upgraded).
+
+---
+
+## Required Field Legend
+
+If asterisks (*) are used to mark required fields, a visible legend must appear in the form — typically at the top or bottom:
+
+| ✅ Good | ❌ Bad |
+|---|---|
+| "* Required fields" near the form title | Asterisks with no explanation |
+| "Fields marked * are required" | Assuming all users know the convention |
+
+**Rule:** The `*` convention is widely understood but not universal. A legend is always required for accessibility. Absence of a legend is a 🟢 Tip — not critical, but worth flagging at handoff.
+
+---
+
+## Per-Role Text Audit Guide
+
+When auditing text content in a Figma frame or codebase, classify each text node by role before checking it:
+
+| Role | How to Identify | Key Rule |
+|---|---|---|
+| **CTA button** | Text inside button/interactive component | Must be a verb. "Save", "Submit", "Send Message" |
+| **Label** | Text above or beside an input field | Must be visible, not placeholder. Required = * with legend |
+| **Placeholder** | Greyed text inside empty input | Format hint only. Never a label replacement |
+| **Error message** | Red/warning text near field or at form top | Answers what/why/how. No blame, no tech jargon |
+| **Empty state** | Text shown when list/content area is empty | Explains the state + gives a next action |
+| **Section header** | Largest text in a content block | Should describe the content, not be decorative |
+| **Confirmation/toast** | Success/feedback text after an action | Names the thing acted on. Offers undo if destructive |
+
+**Audit citation format:** Always quote the exact text and include the node ID when available.
+`🟡 Button label "Submit" (node 68:27811) — vague verb. Use "Save Changes" or "Send Report" instead.`

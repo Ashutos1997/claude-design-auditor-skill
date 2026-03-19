@@ -60,6 +60,67 @@ This is the most important thing to check. Failing contrast = failing accessibil
 
 ---
 
+## WCAG Luminance Computation (Programmatic Auditing)
+
+When auditing code or Figma tokens programmatically, compute contrast ratios using this exact algorithm — do not estimate visually.
+
+### Step 1: Hex to relative luminance
+```
+Given hex color #RRGGBB:
+
+1. Normalize channels:
+   R = parseInt(RR, 16) / 255
+   G = parseInt(GG, 16) / 255
+   B = parseInt(BB, 16) / 255
+
+2. Linearize each channel:
+   channel_linear = channel ≤ 0.04045
+     ? channel / 12.92
+     : ((channel + 0.055) / 1.055) ^ 2.4
+
+3. Compute relative luminance:
+   L = 0.2126 × R_linear + 0.7152 × G_linear + 0.0722 × B_linear
+```
+
+### Step 2: Contrast ratio from two luminances
+```
+Given L1 (lighter) and L2 (darker):
+  ratio = (L1 + 0.05) / (L2 + 0.05)
+
+Always put the higher luminance value as L1.
+Result range: 1:1 (identical) to 21:1 (black on white).
+```
+
+### Quick reference values
+| Color | Relative Luminance |
+|---|---|
+| #FFFFFF white | 1.0 |
+| #000000 black | 0.0 |
+| #767676 mid-gray | ~0.215 → 4.54:1 on white (AA pass) |
+| #999999 light gray | ~0.600 → ~2.85:1 on white (fail) |
+| #7C3AED purple | ~0.062 → ~14.1:1 on white |
+
+### Code-path color pair extraction
+```
+When auditing HTML/CSS/React for contrast:
+
+1. Find foreground color: color property on a text element
+2. Find background color: background-color of its container
+   (walk up the DOM tree if transparent — background may be on a parent)
+3. Resolve CSS variables to their hex values
+4. If opacity < 1 on either layer: blend with white for light mode
+   → effective_color = alpha_blend(color, white, opacity)
+5. Run luminance check on the resolved hex pair
+6. If ratio < 4.5:1 for body text → 🔴 Critical
+   If ratio < 3:1 for large text / UI components → 🔴 Critical
+
+Common trap: text on a gradient background.
+→ Check contrast against the lightest point of the gradient — this is worst case.
+→ Flag as 🟡 Warning even if some gradient stops pass.
+```
+
+---
+
 ## Color Meaning & Semantics
 
 ### Universal Associations
