@@ -191,3 +191,110 @@ Item 15: delay 560ms (total: 560ms + duration ≈ 🔴 too slow)
 | Animation > 300ms (shorter than 600ms) | 🟢 Tip |
 | Spring easing used too liberally | 🟢 Tip |
 | No Smart Animate naming convention | 🟢 Tip (Figma only) |
+
+---
+
+## Code-Specific Animation Checks
+
+When auditing CSS/React/Vue animation code, check these directly.
+
+### prefers-reduced-motion
+```
+This is the single most important code check for Cat 8. Run automatically.
+
+Detection:
+  → Search for @media (prefers-reduced-motion: reduce) in all CSS and styled-components
+  → Search for useReducedMotion() hook (Framer Motion), or equivalent
+
+If any transition: or animation: declaration exists AND no reduced-motion query found:
+  → 🔴 Critical
+
+Correct global pattern:
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+Also acceptable (targeted, not global):
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .modal { animation: none; }
+  }
+```
+
+### Duration values
+```
+Collect all transition-duration and animation-duration values in ms.
+
+> 600ms on any UI interaction → 🔴 Critical (feels broken/sluggish)
+300–600ms on UI interaction → 🟡 Warning (check if intentional for page-level)
+150–300ms on UI interaction → ✅ ideal range
+< 100ms on any transition → 🟢 Tip (may be imperceptible — intentional?)
+
+Page transitions (route changes): 300–500ms → ✅
+Loading/progress animations: any duration → ✅ (exempt from UI duration rule)
+```
+
+### Easing
+```
+Collect all transition-timing-function and animation-timing-function values.
+
+linear on any interactive element transition → 🟡
+  (linear feels mechanical — use ease-out for entrances, ease-in for exits)
+
+ease-in on entrance animations → 🟡
+  (starts slow, speeds up — feels like it arrives late)
+
+ease-out on entrance animations → ✅
+ease-in on exit animations → ✅
+ease-in-out on transitions → ✅ (symmetric — fine for hover states)
+
+cubic-bezier values: check if they approximate ease-in or ease-out
+  → cubic-bezier(0, 0, 0.2, 1)  = ease-out → ✅
+  → cubic-bezier(0.4, 0, 1, 1)  = ease-in  → ✅ for exits
+  → cubic-bezier(0, 0, 1, 1)    = linear   → 🟡
+```
+
+### Infinite loops
+```
+animation-iteration-count: infinite:
+  → On a background/decorative element with no user control → 🟡 Warning
+  → On a loading spinner → ✅ (expected)
+  → On a skeleton shimmer → ✅ (expected)
+  → On a marquee/ticker → 🟡 (distraction — should pause on hover/focus)
+
+animation-play-state: paused on :hover / :focus → ✅ (infinite loop with pause = acceptable)
+```
+
+### transition: all
+```
+transition: all [duration] → 🟡 Warning
+  Reason: Animates every CSS property including layout properties (width, height, padding),
+  which causes expensive layout recalculations and jank.
+
+Preferred: specify only the properties you need:
+  transition: color 200ms ease-out, background-color 200ms ease-out;
+  transition: transform 250ms ease-out, opacity 250ms ease-out;
+
+High-performance properties (GPU-composited, no layout cost):
+  transform, opacity → ✅ always prefer these
+  color, background-color, box-shadow, border-color → ✅ acceptable (paint only)
+  width, height, padding, margin, top, left → 🟡 (trigger layout — avoid animating)
+```
+
+### Framer Motion / React Spring specific
+```
+If Framer Motion detected (import { motion } from 'framer-motion'):
+  → Check for useReducedMotion() hook used to conditionally disable animations → ✅
+  → AnimatePresence without reduced motion fallback → 🟡
+  → variants with duration > 0.6s → 🟡 (same threshold in seconds)
+  → staggerChildren > 0.1s × item count > 400ms total → 🟡
+
+If React Spring detected:
+  → config.slow or tension < 100 (slow animations) → 🟡 check intent
+  → No reduced motion handling → 🟡
+```

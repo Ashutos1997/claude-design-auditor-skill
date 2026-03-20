@@ -236,3 +236,78 @@ Third-party components, native platform guidelines (iOS HIG, Material Design), o
 
 If yes → intentional, acceptable.  
 If no → accidental, fix it.
+
+---
+
+## Code-Specific Spacing Checks
+
+When auditing CSS/React/Vue code, verify these directly rather than estimating visually.
+
+### Off-grid value detection
+```
+Collect all padding, margin, gap, width, height values in px.
+
+Not divisible by 4 → 🟡 Warning (off any grid)
+Divisible by 4 but not 8 → 🟢 Tip (on 4pt grid, acceptable but 8pt preferred)
+Divisible by 8 → ✅
+
+Common off-grid values to flag: 3, 5, 6, 7, 9, 10, 11, 13, 14, 17, 18, 22, 26...
+Common on-grid values: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64...
+
+Tailwind arbitrary spacing → always flag:
+  p-[13px], gap-[22px], m-[7px] → 🟡 (use nearest class instead)
+  p-[13px] → p-3 (12px) or p-4 (16px)
+
+Deduplication rule: same off-grid value in 5+ places → one grouped issue:
+  🟡 "padding: 13px — 8 occurrences. Snap to 12px or 16px."
+```
+
+### Padding consistency
+```
+Cards and panels:
+  → Mismatched sides: paddingTop: 16 / paddingLeft: 12 on same component → 🟡
+  → Exception: deliberate asymmetry (e.g. more horizontal padding) is fine
+    if applied consistently across all instances of the same component
+
+Mixed shorthand across similar components:
+  → ComponentA: padding: 16px
+  → ComponentB: padding: 16px 24px
+  → Same component type, different padding pattern → 🟡
+```
+
+### z-index audit
+```
+Expected z-index ranges (from spacing.md z-index table):
+  0–9:    base content
+  10–99:  floating elements (sticky headers, FABs)
+  100–199: dropdowns, tooltips
+  200–299: modals, overlays
+  300–399: toasts, notifications
+  9999+:  dev tools only
+
+Flag as 🟡 Warning:
+  → z-index: 9999 on a modal (correct range is 200–299)
+  → z-index: 99999 on anything except intentional dev overlay
+  → Two elements at the same z-index in an overlapping stacking context
+  → z-index on an element with position: static (has no effect)
+```
+
+### Content margin and max-width
+```
+  → Body/main container with no max-width → 🟢 Tip
+  → max-width > 1440px on text-heavy containers → 🟢 Tip
+  → Outermost container with margin: 0 and no padding → 🟡 (content touches edge)
+  → Container using px margins with no responsive override → 🟡
+```
+
+### Logical properties (RTL readiness)
+```
+Physical → Logical property suggestions (flag as 🟢 Tip unless RTL audit active):
+  margin-left  → margin-inline-start
+  margin-right → margin-inline-end
+  padding-left → padding-inline-start
+  padding-right → padding-inline-end
+  left: / right: on positioned elements → inset-inline-start / inset-inline-end
+
+Upgrade to 🟡 Warning if i18n library is detected or RTL support is requested.
+```

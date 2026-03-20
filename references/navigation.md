@@ -200,3 +200,112 @@ Breadcrumbs show the hierarchical path to the current page.
 | Nav changes between sections (items appear/disappear) | Keep nav consistent on every page |
 | No skip navigation link | Add `<a href="#main">Skip to main content</a>` as first element |
 | Active nav item only differs by color | Add weight, background, or position indicator too |
+
+---
+
+## Code-Specific Navigation Checks
+
+When auditing HTML/React/Vue navigation code, check these directly.
+
+### Semantic structure
+```
+<nav> element:
+  → Primary nav wrapped in <nav> → ✅
+  → Nav built with <div> and no role="navigation" → 🟡
+  → Multiple <nav> elements without distinguishing aria-label → 🟡
+    Fix: <nav aria-label="Primary navigation"> / <nav aria-label="Footer navigation">
+
+Nav item elements:
+  → Nav links are <a href="..."> → ✅
+  → Nav links are <button> (for SPA router pushes) → ✅ if keyboard accessible
+  → Nav links are <div onClick> with no role or tabindex → 🔴 Critical
+```
+
+### Active state
+```
+aria-current="page":
+  → Present on the active nav item → ✅
+  → Missing — active state is CSS-only (.active class) → 🟡
+    (screen readers can't detect CSS classes as the current page)
+
+Active visual signal:
+  → Only color change between active and inactive → 🟡
+    (fails colorblind users — need weight, background, or indicator bar too)
+  → Color + font-weight or border-bottom indicator → ✅
+
+Active state contrast:
+  → Extract active and inactive text/icon colors
+  → Run contrast check: active vs inactive must be ≥ 3:1
+  → Less than 3:1 → 🟡 Warning
+```
+
+### Skip navigation link
+```
+Pattern to detect:
+  First <a> element in DOM should be a skip link:
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  Visually hidden until focused:
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+  }
+  .skip-link:focus {
+    left: 0; /* or transform: translateX(0) */
+  }
+
+Check:
+  → Skip link present as first focusable element → ✅
+  → Skip link missing → 🟡 Warning
+  → Skip link present but target ID doesn't exist in DOM → 🔴 Critical
+  → Skip link visible at all times (not just on focus) → 🟢 Tip (valid but not required)
+```
+
+### Tab vs nav misuse
+```
+Tabs (same-page view switching):
+  Correct HTML: role="tablist" > role="tab" (aria-selected) > role="tabpanel"
+  → <nav> used for view switching instead of tablist → 🟡
+  → Tabs without aria-selected on active tab → 🟡
+  → Tab panels without role="tabpanel" → 🟡
+
+Navigation (cross-page section switching):
+  Correct HTML: <nav> > <ul> > <li> > <a href="...">
+  → role="tablist" used for routing between pages → 🟡
+  → Nav uses <a> links (not buttons) → ✅ for page nav
+```
+
+### Keyboard and dropdown handling
+```
+Dropdown menus:
+  → Escape key closes the dropdown → ✅ (check for keydown handler)
+  → Arrow keys navigate within dropdown items → ✅ (ideal)
+  → Dropdown has no keyboard handler at all → 🟡
+  → Dropdown trigger has aria-expanded="true/false" → ✅
+  → aria-expanded missing on dropdown trigger → 🟡
+
+Focus trapping in mobile drawers/hamburger menus:
+  → Focus trapped inside open drawer → ✅
+  → Focus leaves drawer when open → 🟡
+  → Escape closes drawer → ✅
+```
+
+### Breadcrumbs
+```
+Correct structure:
+  <nav aria-label="Breadcrumb">
+    <ol>
+      <li><a href="/">Home</a></li>
+      <li><a href="/projects">Projects</a></li>
+      <li aria-current="page">Alpha</li>
+    </ol>
+  </nav>
+
+Checks:
+  → <nav aria-label="Breadcrumb"> wrapping → ✅
+  → <ol> used (not <ul>) → ✅ (order matters)
+  → Last item has aria-current="page" → ✅
+  → Intermediate items are links → ✅
+  → Intermediate items are plain text, not links → 🟡
+  → No breadcrumb on route with 3+ path segments → 🟡
+```

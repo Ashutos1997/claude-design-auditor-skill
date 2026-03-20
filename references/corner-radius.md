@@ -238,3 +238,94 @@ Example: Input with 8px radius + internal search icon button with 6px radius on 
   border-radius: var(--radius-full);
 }
 ```
+
+---
+
+## Code-Specific Corner Radius Checks
+
+When auditing CSS/React/Vue code, check these directly.
+
+### Arbitrary value detection
+```
+Collect all border-radius values in the codebase.
+
+Not on the radius scale (2, 4, 8, 12, 16, 24, 9999px) → 🟡 Warning
+  Common arbitrary values to flag: 3px, 5px, 6px, 7px, 10px, 11px, 13px, 14px, 20px
+
+Tailwind:
+  rounded-sm (2px), rounded (4px), rounded-md (6px), rounded-lg (8px),
+  rounded-xl (12px), rounded-2xl (16px), rounded-3xl (24px), rounded-full (9999px) → ✅
+  rounded-[7px], rounded-[11px] → 🟡 (arbitrary Tailwind values)
+
+Deduplication: same arbitrary value in 5+ places → one grouped issue:
+  🟡 "border-radius: 7px — 6 occurrences. Use 8px (--radius-md) instead."
+```
+
+### Tokenized vs hardcoded
+```
+  → border-radius: var(--radius-md) → ✅ tokenized
+  → border-radius: 8px (hardcoded, no variable) → 🟡 if token system exists
+
+If CSS custom properties are defined (:root { --radius-md: 8px }):
+  → Components using hardcoded values instead of the token → 🟡 each occurrence
+  → Compute radius coverage %: var(--radius-*) / total border-radius × 100
+  → < 50% coverage → 🟡 Warning
+```
+
+### Nested radius rule (code)
+```
+The formula: outer_radius = inner_radius + padding
+
+Detectable pattern in CSS:
+  .card {
+    padding: 16px;
+    border-radius: 24px; /* = inner(8px) + padding(16px) ✅ */
+  }
+  .card .button {
+    border-radius: 8px;
+  }
+
+Flag if:
+  → A child element has border-radius and its parent has border-radius
+    AND parent.radius < child.radius + parent.padding → 🟡 Warning
+    (inner corners will appear to poke through the outer border)
+
+  → Parent and child have the same border-radius value → 🟡
+    (outer needs to be larger by the padding amount)
+
+Tailwind nested check:
+  → Parent: rounded-2xl (16px) with p-4 (16px)
+  → Child: rounded-lg (8px)
+  → Required: parent should be rounded-2xl (24px) = 8 + 16 → child is fine
+  → But if parent is rounded-lg (8px) and child is rounded-md (6px) with p-2 (8px):
+    parent (8px) < child (6px) + padding (8px) = 14px → 🟡 outer too small
+```
+
+### Pill shapes — intentional check
+```
+border-radius: 50% on non-square elements → creates pill ✅ (if intentional)
+border-radius: 9999px or rounded-full → pill → ✅ (if applied to tag/badge/toggle)
+
+Flag as 🟢 Tip if:
+  → rounded-full applied to a large container (modal, card, panel) → looks toy-like
+  → rounded-full on text-heavy elements → readability concern
+
+border-radius: 50% on width = height element → circle ✅ (avatar, icon container)
+border-radius: 50% on unequal width/height → unintended pill → 🟡
+```
+
+### Contextual radius patterns
+```
+Bottom sheet / drawer (anchored to screen bottom):
+  Correct: border-radius: 24px 24px 0 0 (top-left top-right bottom-right bottom-left)
+  Or Tailwind: rounded-t-3xl
+  → All four corners rounded on a bottom-anchored sheet → 🟡 (should be square at bottom)
+
+Dropdown connected to trigger button:
+  → Dropdown top corners rounded to match button bottom corners → ✅
+  → Dropdown all corners rounded when visually connected to button → 🟡
+
+Modal / dialog (floating):
+  → All four corners rounded → ✅
+  → Two corners rounded, two square on a floating modal → 🟡
+```
