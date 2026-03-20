@@ -1,7 +1,7 @@
 ---
 name: design-auditor
-version: 1.2.2
-description: "Audit designs against 17 professional rules. Use when the user wants to review, audit, validate, or improve a design using Figma MCP, code (HTML/CSS/React/Vue), screenshots, or written descriptions. Triggers on phrases like check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP. Valuable for developers and non-designers who need expert design validation."
+version: 1.2.3
+description: "Audit designs against 17 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP."
 ---
 
 # Design Checker Skill
@@ -666,6 +666,40 @@ Introduce with one sentence in the user's detected language:
 - English: *"Here's where that value sits on the grid and what to snap it to."*
 - Korean: *"해당 값이 그리드에서 어디에 위치하는지, 어디로 맞춰야 하는지 확인해 보세요."*
 
+**📋 Code input: direct checks available (run these automatically)**
+```
+Off-grid value detection:
+  → Collect all padding, margin, gap, width, height values in px
+  → Flag any value not divisible by 4 → 🟡 Warning
+  → Flag any value not divisible by 8 → 🟢 Tip (4pt is acceptable, 8pt is preferred)
+  → Tailwind: arbitrary values like p-[13px], gap-[22px] → 🟡
+  → Tailwind standard classes (p-4, gap-3) are on-grid by definition → ✅
+
+  Deduplicate: if the same off-grid value appears 5+ times, report once with count:
+    🟡 "padding: 13px — appears in 7 places. Snap to 12px (p-3) or 16px (p-4)."
+
+Padding consistency:
+  → Cards/panels with mismatched padding sides (paddingTop ≠ paddingLeft etc.) → 🟡
+    Exception: intentional asymmetric padding (e.g. more horizontal than vertical) is fine
+    if it appears consistently across all similar components.
+  → Mixed shorthand: some components use padding: 16px, others padding: 16px 24px → 🟡
+
+z-index escalation:
+  → z-index values outside expected ranges (see spacing.md z-index table) → 🟡
+  → z-index: 9999 or z-index: 99999 on non-dev-tool elements → 🟡
+  → Multiple elements with the same z-index in overlapping contexts → 🟡
+
+Content margin check:
+  → Body/main container with no max-width → 🟢 Tip (content stretches on wide screens)
+  → max-width > 1440px on body text containers → 🟢 Tip
+  → margin: 0 with no padding on outermost container → 🟡 (content touches screen edge)
+
+Logical properties (RTL safety):
+  → margin-left / margin-right used in layout (not decorative) → 🟢 Tip
+    (prefer margin-inline-start / margin-inline-end for RTL compatibility)
+  → padding-left / padding-right on nav or directional containers → 🟢 Tip
+```
+
 ---
 
 ### CATEGORY 4: Visual Hierarchy & Focus
@@ -1083,6 +1117,45 @@ Only run this category if:
 - [ ] **Active state contrast** — Active/selected nav items must meet 3:1 contrast ratio against inactive items — not just a subtle color shift that's easy to miss.
 - [ ] **Overflow handling** — What happens when there are too many nav items? Tabs should scroll horizontally or collapse into a "More" dropdown. Never let them clip or wrap awkwardly.
 - [ ] **Navigation consistency** — The nav should look and behave identically on every page. Never change which items appear, their order, or their style between sections.
+
+**📋 Code input: direct checks available (run these automatically)**
+```
+Semantic nav element:
+  → Navigation container uses <nav> element → ✅
+  → Navigation built with <div> with no role="navigation" → 🟡 Warning
+  → Multiple <nav> elements without aria-label to distinguish them → 🟡
+    Correct: <nav aria-label="Primary"> and <nav aria-label="Footer">
+
+Active state implementation:
+  → aria-current="page" on the active nav item → ✅
+  → Active state relies only on a CSS class (.active) with no aria-current → 🟡
+    (class alone doesn't communicate current page to screen readers)
+  → Active state only changes color with no weight/background/indicator → 🟡
+    (color alone fails colorblind users — needs a secondary signal)
+
+Skip navigation link:
+  → First focusable element is a skip link targeting #main-content → ✅
+  → No skip link found → 🟡 Warning
+  → Skip link exists but target ID (#main-content) missing from DOM → 🔴 Critical
+
+Tab vs nav misuse:
+  → <nav> containing elements that switch views of the same page → 🟡
+    (should be role="tablist" + role="tab" children)
+  → role="tablist" used for top-level navigation between pages → 🟡
+    (should be <nav> with <a> links)
+
+Keyboard navigability:
+  → Nav items are <div>/<span> with onClick but no role="button" + tabindex="0" → 🔴
+  → Nav items are <a> elements with valid href → ✅
+  → Dropdown menus with no keyboard handler (Escape to close, arrow keys) → 🟡
+
+Breadcrumb implementation:
+  → <nav aria-label="Breadcrumb"> wrapping the crumb list → ✅
+  → Last breadcrumb item has aria-current="page" → ✅
+  → Intermediate breadcrumb items are plain text, not links → 🟡
+  → No breadcrumb on routes 3+ levels deep → 🟡
+  → Breadcrumb list uses <ol> (ordered) not <ul> → ✅ (order matters for breadcrumbs)
+```
 
 ---
 
