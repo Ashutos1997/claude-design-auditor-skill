@@ -147,6 +147,33 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.3
+
+**Category 3 — Spacing & Layout**
+- Off-grid value detection: flags any px value not divisible by 4, with Tailwind arbitrary value support (`p-[13px]` → 🟡)
+- Deduplication: same off-grid value across 5+ places groups into one issue with count
+- Padding consistency check: mismatched sides on cards/panels, mixed shorthand across same component type
+- z-index audit: flags values outside expected ranges, `z-index: 9999` on non-dev-tool elements, duplicate z-index in overlapping contexts, z-index on `position: static`
+- Content margin check: missing `max-width`, content touching screen edge, non-responsive margins
+- Logical properties: flags `margin-left/right`, `padding-left/right` as 🟢 Tip (upgrades to 🟡 if RTL audit active)
+
+**Category 16 — Navigation Patterns**
+- Semantic nav element: `<nav>` vs `<div role="navigation">`, multiple `<nav>` without `aria-label`
+- Active state: `aria-current="page"` detection, CSS-class-only active state flagged as 🟡, color-only active signal flagged as 🟡
+- Skip navigation link: first focusable element check, missing skip link → 🟡, broken target ID → 🔴 Critical
+- Tab vs nav misuse: `<nav>` used for view switching, `role="tablist"` used for page routing
+- Keyboard navigability: `<div onClick>` without `role="button"` + `tabindex` → 🔴, dropdown Escape/arrow key handler check
+- Breadcrumb structure: `<nav aria-label="Breadcrumb">`, `<ol>` vs `<ul>`, `aria-current="page"` on last item, non-linked intermediate crumbs
+
+**Reference Files Updated**
+
+- **`spacing.md`** — Added code-specific section: off-grid detection logic, padding consistency patterns, z-index audit table, content margin rules, logical property suggestions
+- **`navigation.md`** — Added code-specific section: semantic structure, active state implementation, skip link pattern, tab vs nav misuse, keyboard/dropdown handling, full breadcrumb HTML spec
+- **`animation.md`** — Added code-specific section: `prefers-reduced-motion` global and targeted patterns, duration thresholds (> 600ms → 🔴), easing extraction and classification, infinite loop check, `transition: all` warning, Framer Motion and React Spring specific checks
+- **`corner-radius.md`** — Added code-specific section: arbitrary value detection with Tailwind support, tokenized vs hardcoded check with coverage %, nested radius rule in CSS, pill shape intent check, contextual radius patterns (bottom sheet, dropdown, modal)
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ### v1.2.2
 
 **Figma workflow**
