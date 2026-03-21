@@ -1,7 +1,7 @@
 ---
 name: design-auditor
-version: 1.2.3
-description: "Audit designs against 17 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good. Also triggers when building UI in VS Code or Figma MCP."
+version: 1.2.4
+description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design. Also triggers when building UI in VS Code or Figma MCP."
 ---
 
 # Design Checker Skill
@@ -1205,6 +1205,62 @@ Token naming check:
 ```
 
 ---
+
+### CATEGORY 18: Ethical Design & Dark Patterns
+*Full rules, all pattern definitions, detection signals, and the ethical persuasion reference → `references/ethics.md`*
+
+This category audits for manipulative or deceptive design patterns — not design mistakes, but intentional choices that may exploit users. Read `references/ethics.md` before running this category.
+
+**When to run:** Always. Every design can be checked for ethical patterns regardless of input type or stage.
+
+**Ethics severity model** (different from standard audit severity):
+| Level | Label | Meaning | Score impact |
+|---|---|---|---|
+| 🔴 | Deceptive | Actively misleads or coerces. Violates user trust, often consumer law. | −15 pts |
+| 🟡 | Questionable | Exploitative depending on context. Warrants review. | −7 pts |
+| 🟢 | Noted | Persuasive element present. Ethical in standard use. | 0 pts |
+
+**Ethics Score** is separate from the Overall Score. Start at 100, apply ethics deductions only.
+Display as: **Ethics Score: X/100** alongside Accessibility Score.
+
+**Detection confidence:** Always declare confidence per finding (High/Medium/Low) using the detection scope table in `references/ethics.md`. Never flag low-confidence patterns without explicit caveat.
+
+**Checklist — run all groups:**
+
+*Group A: Deceptive Interface Patterns*
+- [ ] **Confirmshaming** — Decline/cancel copy does not shame or guilt the user for choosing it
+- [ ] **CTA hierarchy inversion** — Accept and decline actions have equivalent visual weight (especially on consent/cookie screens)
+- [ ] **Trick questions** — All consent copy uses positive, unambiguous language with no double negatives
+- [ ] **Disguised ads** — Sponsored/promoted content is visually distinct from organic content with a clear, readable label
+- [ ] **Bait and switch** — CTA labels accurately describe the immediate next action
+- [ ] **Hidden costs** — All mandatory fees are shown from the first price display
+- [ ] **Visual misdirection** — Cost, commitment, and risk information meets the same visual standards as the CTA it accompanies
+
+*Group B: Coercive Flows*
+- [ ] **Roach motel** — Cancellation/exit path is no harder than the sign-up/entry path
+- [ ] **Obstruction** — Unsubscribe, data deletion, and account closure are self-serve and reachable in ≤ 3 steps
+- [ ] **Forced action** — No non-essential data collection or permission is required to access core functionality
+- [ ] **Nagging** — Dismissed prompts stay dismissed; "don't show again" is permanently respected
+
+*Group C: Consent & Privacy*
+- [ ] **Privacy zuckering** — All non-essential data sharing defaults to OFF
+- [ ] **Pre-checked consent** — No marketing/data-sharing checkbox is pre-checked by default
+- [ ] **Interface interference** — Privacy controls use consistent interaction patterns with clear state labels
+- [ ] **Drip pricing** — No fees are revealed only at the final checkout step
+
+*Group D: False Urgency & Scarcity*
+- [ ] **Countdown timers** — Any timer is backed by a real server-side expiry that does not reset
+- [ ] **False scarcity** — Scarcity claims ("Only X left") are backed by real-time inventory data
+- [ ] **False social proof** — Social proof numbers ("X people viewing") reflect real data, not hardcoded or random values
+
+*Group E: Emotional Manipulation*
+- [ ] **Guilt-based copy** — Inactivity, cancellation, and decline states are addressed neutrally, not shamefully
+- [ ] **Fear appeals** — Risk language is proportionate to actual risk; no exaggerated consequences for conversion
+- [ ] **Toying with emotion** — No patterns that deliberately engineer anxiety, FOMO, or regret as conversion mechanisms
+
+**Before flagging any pattern:** Check the Ethical Persuasion reference in `references/ethics.md`. Do not flag legitimate persuasion techniques (genuine social proof, real urgency, positive progress framing, transparent anchoring).
+
+---
 ## Step 3: Score & Report
 
 ### Scoring Formula
@@ -1308,6 +1364,10 @@ audit, share the Figma file or component code.
 
 ### Accessibility Score: [X/100]  *(Categories 2, 6, 7, 16)*
 [Band label: WCAG compliant / minor gaps / significant gaps / failing]
+
+### Ethics Score: [X/100]  *(Category 18)*
+[Band label: Ethically sound / minor concerns / significant manipulation risk / deliberately deceptive]
+*(Only show if any ethics issues were found, or if the audit was full scope)*
 
 ### Score by Category
 | Category | Score | Issues |
@@ -1593,4 +1653,4 @@ color: #666;          /* 4.5:1 contrast on white */
 - `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth, code shadow audit
 - `references/iconography.md` — Icon families, optical sizing, touch targets, meaning consistency
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
-- `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming
+- `references/ethics.md` — Ethical design & dark patterns: full taxonomy (20 patterns across 5 groups), detection signals, ethics severity model, ethics score, ethical persuasion reference
