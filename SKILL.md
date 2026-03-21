@@ -1653,4 +1653,5 @@ color: #666;          /* 4.5:1 contrast on white */
 - `references/elevation.md` — Shadow scale, elevation hierarchy, dark mode depth, code shadow audit
 - `references/iconography.md` — Icon families, optical sizing, touch targets, meaning consistency
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
+- `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, code animation checks
 - `references/ethics.md` — Ethical design & dark patterns: full taxonomy (20 patterns across 5 groups), detection signals, ethics severity model, ethics score, ethical persuasion reference
