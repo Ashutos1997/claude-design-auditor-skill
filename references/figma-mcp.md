@@ -76,6 +76,65 @@ No node ID given (just file URL) → Always use get_design_pages first,
 ### Tool: `get_metadata`
 Returns file-level info: title, last modified, owner. Use to confirm you're in the right file.
 
+### Tool: `get_code_connect_suggestions`
+Returns AI-suggested mappings between Figma components in the file and code components in the connected repository. Call after `get_design_context` on any Figma audit where a codebase is connected.
+
+**What it returns:**
+- Figma component name + node ID
+- Suggested code component path or import name
+- Confidence level per suggestion
+
+**How to use:**
+```
+Call on the same nodeId as get_design_context.
+
+For each suggestion returned:
+  - Record: Figma component name → suggested code component
+  - Use to enrich Cat 5 (naming consistency) and Cat 17 (token/component coverage)
+  - Show in developer handoff report as a mapping table
+
+If the call fails or returns empty:
+  → Skip silently — Code Connect requires Dev Mode and a connected repo.
+  → Never mention the failure in the report.
+```
+
+### Tool: `get_code_connect_map`
+Returns confirmed, user-configured Figma→code component mappings (as opposed to suggestions). More reliable than suggestions when available.
+
+**When to use:**
+Call alongside `get_code_connect_suggestions`. If confirmed mappings exist, prefer them over suggestions for the handoff table. Note in the report header: "Code Connect: [N] confirmed mappings".
+
+**Coverage gap detection:**
+```
+confirmed_components = set of Figma components with a code mapping
+all_components = set of all named components in get_design_context layer tree
+
+unmapped = all_components - confirmed_components
+If unmapped is non-empty → flag as 🟡 Warning in Cat 5:
+  "N Figma components have no code equivalent: [list]"
+```
+
+### Tool: `create_design_system_rules`
+Generates design system enforcement rules for the connected repository based on the Figma file's component structure, tokens, and naming conventions.
+
+**When to offer:**
+- Cat 17 score < 70 (significant hardcoding found)
+- Component health < 50% (low coverage)
+- User explicitly asks for design system setup or enforcement
+- Code Connect mappings were found — rules can reference real component names
+
+**Never call automatically** — always ask the user first. This writes to the codebase.
+
+**Safety pattern:**
+```
+1. Audit completes and significant token/naming issues found
+2. Offer: "Want me to generate design system rules for your repo?"
+3. Wait for explicit "yes"
+4. Call create_design_system_rules on the file key
+5. Show the generated rules to the user before they are applied
+6. If call fails: note "Requires Figma Dev Mode + connected repository" and skip
+```
+
 ---
 
 ## Auditing from Context Data
