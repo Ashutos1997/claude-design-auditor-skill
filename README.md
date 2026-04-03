@@ -158,6 +158,40 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.5
+
+**Figma MCP — three new tools integrated**
+
+- **`get_code_connect_suggestions`** (F3.6) — called after `get_design_context` on every Figma audit. Returns AI-suggested mappings between Figma components and code components in the connected repository. Enriches Cat 5 (naming consistency) and Cat 17 (component coverage). Flags Figma components with no code equivalent as 🟡 Warning. Adds a Code Connect line to the report header when data is available.
+- **`get_code_connect_map`** — retrieves confirmed, user-configured Figma→code mappings. Preferred over suggestions when available. Unmapped components detected and flagged. Powers the component mapping table in the Developer Handoff Report.
+- **`create_design_system_rules`** (F5.5) — offered post-audit when Cat 17 score < 70 or component health < 50%. Generates design system enforcement rules for the connected repository based on the Figma file. Always requires explicit user confirmation before calling — never runs automatically.
+- **`figma-mcp.md` updated** — all three tools documented with usage patterns, safety rules, and coverage gap detection logic.
+
+**Scoring calibration — Blocker tier added**
+
+Introduced a 🚫 **Blocker** severity level above Critical for issues that violate a legal or compliance standard (WCAG AA, GDPR, PECR, consumer protection law):
+
+| Severity | Deduction | Basis |
+|---|---|---|
+| 🚫 Blocker | −12pts | Legal/compliance violation — WCAG AA, GDPR, PECR |
+| 🔴 Critical | −8pts | Usability failure — must fix before shipping |
+| 🟡 Warning | −4pts | Degrades experience — should fix |
+| 🟢 Tip | −1pt | Polish-level improvement |
+
+Blockers are not "worse Criticals" — they are a different class of issue. A Blocker can be cited against a specific WCAG success criterion number or legal provision. A Critical is a design quality judgment.
+
+Blocker examples (with legal basis): contrast below WCAG AA 4.5:1 (SC 1.4.3), keyboard-inaccessible interactive element (SC 2.1.1), missing alt text on meaningful images (SC 1.1.1), `prefers-reduced-motion` absent when animations exist (SC 2.3.3), pre-checked marketing consent (GDPR/PECR), skip link missing or broken (SC 2.4.1).
+
+Accessibility Score updated: Blockers use −12 deductions. Any Blocker in Cat 2, 6, 7, or 16 appends "⚠️ Contains legal compliance failures" to the score display.
+
+Report template updated: 🚫 Blockers section appears above Criticals, with legal basis cited per issue. Section omitted entirely if no Blockers found.
+
+**Trigger vocabulary expanded**
+
+18 new trigger phrases added: "is this GDPR compliant", "check my onboarding", "review my checkout", "is this manipulative", "any dark patterns here", "check my landing page", "is my UI accessible", "check my design system", "is this ethical", "is my form accessible", "check my navigation", "is my dark mode correct", "is this responsive", "review my empty states", "check my error states" and more.
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ### v1.2.4
 
 **New: Category 18 — Ethical Design & Dark Patterns**
