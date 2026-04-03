@@ -1,7 +1,7 @@
 ---
 name: design-auditor
-version: 1.2.4
-description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design. Also triggers when building UI in VS Code or Figma MCP."
+version: 1.2.5
+description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, review my checkout, is this manipulative, any dark patterns here, check my landing page, is my UI accessible, check my design system, is this ethical, is my form accessible, check my navigation, is my dark mode correct, is this responsive, review my empty states, check my error states."
 ---
 
 # Design Checker Skill
@@ -273,8 +273,56 @@ When color tokens are available from `get_variable_defs`, compute WCAG contrast 
 
 If `get_variable_defs` fails or returns no color pairs, fall back to screenshot-based visual assessment and 🟡 Medium confidence for Cat 2.
 
+### F3.6: Code Connect — Design-to-Code Mapping (if available)
+
+After variable definitions, attempt `get_code_connect_suggestions` on the audited node. This returns AI-suggested mappings between Figma components and real code components in the connected codebase.
+
+**What to do with the result:**
+
+```
+If get_code_connect_suggestions returns mappings:
+  → For each suggested mapping (Figma component → code component):
+    - Note the component name, suggested code path, and confidence level
+    - Use this to enrich Cat 5 (Consistency) and Cat 17 (Tokens):
+      "Button/Primary/Default" → maps to <Button variant="primary"> in codebase
+    - Flag mismatches: Figma component name vs code component name divergence → 🟢 Tip
+    - Flag missing mappings: Figma components with no suggested code equivalent → 🟡
+      (component exists in design but not in codebase — handoff gap)
+
+  Also attempt get_code_connect_map to retrieve confirmed existing mappings:
+  → Confirmed mappings (user has already set up Code Connect) → show in report header
+  → No confirmed mappings → note "Code Connect not configured — suggestions only"
+
+  Add a Code Connect line to the REPORT HEADER when data is available:
+    "Code Connect: [N] components mapped · [N] unmapped · [N] suggestions available"
+
+If get_code_connect_suggestions fails or returns empty:
+  → Skip silently. Do not mention it in the report.
+  → Code Connect requires the Figma Dev Mode and a connected codebase — not always available.
+```
+
+**Use for Cat 5 cross-check:**
+```
+When a component has a confirmed or suggested code mapping:
+  → Check if the Figma component name matches the code component name
+  → "Button/Primary" in Figma → <PrimaryButton> in code → 🟢 Tip (minor naming drift)
+  → "Button/Primary" in Figma → <Btn> in code → 🟡 Warning (naming too divergent)
+  → Figma has 12 button variants, code has 3 → 🟡 Warning (variant coverage gap)
+```
+
+**Use for developer handoff report:**
+When generating the Developer Handoff Report and Code Connect data is available, include a mapping table:
+
+```
+| Figma Component | Code Component | Status | Notes |
+|---|---|---|---|
+| Button/Primary/Default | <Button variant="primary"> | ✅ Mapped | — |
+| Card/Product | <ProductCard> | ✅ Mapped | — |
+| Modal/Confirmation | — | 🟡 Unmapped | No code equivalent found |
+```
+
 ### F4: Run the Audit
-With context data, variable definitions, and screenshot in hand, run the full audit below.
+With context data, variable definitions, screenshot, and code connect data in hand, run the full audit below.
 
 ### F5: Fix Directly in Figma (if requested)
 When the user selects "Fix all Critical" or "Fix a specific issue" and the original input was a Figma file (not a screenshot or code), apply fixes using `perform_editing_operations`. Always follow the safety rules in `references/figma-mcp.md`.
@@ -331,6 +379,33 @@ Step 4: Continue the loop
 | Touch target too small | `SET_WIDTH` + `SET_HEIGHT` | nodeId, 44 (minimum) |
 
 **If `perform_editing_operations` is not available:** Fall back to design direction mode for all fixes — describe the change spatially and provide the exact Figma right-panel values to enter manually. Never silently skip without informing the user.
+
+### F5.5: Generate Design System Rules (optional, post-audit)
+
+After the audit and fix loop complete, if the user asks "can you generate design system rules?" or "set up design system enforcement" — or if the audit found significant token/naming issues — offer to call `create_design_system_rules`.
+
+```
+When to offer:
+  → Cat 17 (Tokens) score < 70 — significant hardcoding found
+  → Component health < 50% — low component coverage
+  → User explicitly asks for design system setup or enforcement
+  → Code Connect mappings were found (F3.6) — rules can reference real components
+
+What it does:
+  → Generates design system rules for the connected repository based on the
+    Figma file's component structure, token definitions, and naming conventions
+  → Rules can enforce: component naming, token usage, spacing scale, radius scale
+
+How to offer (after fix loop):
+  English: "I found significant design system gaps. Want me to generate design
+            system enforcement rules for your codebase based on this Figma file?"
+  Korean: "디자인 시스템 격차가 발견되었습니다. 이 Figma 파일을 기반으로 코드베이스에
+           대한 디자인 시스템 적용 규칙을 생성할까요?"
+
+If yes → call create_design_system_rules on the file key
+If the call fails or is unavailable → note "Design system rule generation requires
+  Figma Dev Mode and a connected repository" and skip.
+```
 
 ---
 
