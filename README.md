@@ -2,7 +2,7 @@
 
 A Claude skill that audits designs against **18 professional design categories** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
 
-Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, and written descriptions. Supports **English and Korean**.
+Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, **wireframes**, and written descriptions. Supports **English and Korean**.
 
 Compatible with **Claude**, **Manus**, and other agents that support SKILL.md-based skills.
 
@@ -10,16 +10,20 @@ Compatible with **Claude**, **Manus**, and other agents that support SKILL.md-ba
 
 ## What It Does
 
-Drop in a Figma link, paste your CSS, or upload a screenshot — Design Auditor checks your work against 18 categories of design rules and gives you:
+Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe — Design Auditor checks your work against 18 categories of design rules and gives you:
 
 - A **score out of 100** with per-category breakdown
 - A separate **Accessibility Score** (WCAG coverage across Cat 2, 6, 7, 16)
 - A separate **Ethics Score** (dark patterns and manipulative design across Cat 18)
-- Issues ranked by severity (🔴 Critical / 🟡 Warning / 🟢 Tip)
+- A **🚫 Blocker tier** for legal/compliance violations (WCAG AA, GDPR, PECR) — separate from Critical issues
+- Issues ranked by severity (🚫 Blocker / 🔴 Critical / 🟡 Warning / 🟢 Tip)
 - **Plain-language explanations** of *why* each rule matters
 - An **Issue Priority Matrix** — every issue plotted by effort vs. impact
 - Before/after code diffs when fixing issues in HTML/CSS/React/Vue
 - Direct fixes in your **Figma file** via Figma MCP
+- **Figma Code Connect** — detects design-to-code mapping gaps (`get_code_connect_suggestions`)
+- **Wireframe to Spec** — converts wireframes into annotated dev-ready specs
+- **Visual audit report** exportable to Canva for stakeholder sharing
 - **Developer handoff report** — CSS spec table, a11y checklist, critical fixes
 - **Export report as Markdown** — ready for Notion, GitHub, Linear, or Jira
 
@@ -81,6 +85,7 @@ Once installed, just talk to Claude naturally:
 "Does this follow WCAG?" → contrast & a11y audit
 "Check my Figma file: [link]" → Figma MCP audit
 "Any dark patterns here?" → ethics audit
+"Wireframe to spec" → annotated dev-ready spec from wireframe
 ```
 
 **Korean:**
@@ -90,9 +95,8 @@ Once installed, just talk to Claude naturally:
 "내 디자인 괜찮아 보여?" → 전체 감사
 "UI 검토해줘" → 전체 감사
 "색상 대비 확인해줘" → 색상 및 접근성 감사
+"와이어프레임 스펙 출력해줘" → 와이어프레임 스펙 모드
 ```
-
-Paste a Figma URL, share a screenshot, or paste your HTML/CSS — Claude will run the audit automatically and respond in the same language you used.
 
 ---
 
@@ -105,29 +109,27 @@ Paste a Figma URL, share a screenshot, or paste your HTML/CSS — Claude will ru
 **Type:** Figma MCP
 **Confidence:** 🟢 High
 **Component health:** 71% coverage · 2 detached instances · 8 unnamed layers
+**Code Connect:** 8 components mapped · 3 unmapped
 
-### Overall Score: 68/100
-100 − (3 × 🔴 8) − (4 × 🟡 4) − (2 × 🟢 1) = 68/100
-Contrast failures and missing form labels are the main drag.
+### Overall Score: 62/100
+100 − (1 × 🚫 12) − (2 × 🔴 8) − (4 × 🟡 4) − (2 × 🟢 1) = 62/100
+A legal compliance failure and contrast issues are the main drag.
 
-### Accessibility Score: 62/100 — significant gaps
+### Accessibility Score: 55/100 — significant gaps ⚠️ Contains legal compliance failures
 ### Ethics Score: 85/100 — minor concerns
 
-### 🔴 Critical Issues
-- **Body text contrast** — #aaa on white = 2.3:1 → Fix: use #595959 (7:1)
-  Why: many users literally can't read low-contrast text.
+### 🚫 Blockers (−12pts each)
+- **Text contrast failure** — #aaa on white = 2.3:1 → Fix: use #595959 (7:1)
+  Legal basis: WCAG 2.1 SC 1.4.3
+
+### 🔴 Critical Issues (−8pts each)
 - **Missing form labels** — placeholder-only inputs lose label on type
   → Fix: add <label> above each input.
 
-### 🟡 Warnings
-- **Off-grid spacing** — padding: 13px, gap: 14px
-  → Fix: use multiples of 8 (8, 16, 24px)
-- **CTA hierarchy inversion** — "Accept all" is primary, "Reject all" is grey text
-  → Fix: give both options equivalent visual weight (GDPR requirement)
-
-### ✅ What's Working Well
-- Clean page structure with logical section flow
-- Hero CTA button has strong contrast and good sizing
+### 🟡 Warnings (−4pts each)
+- **Off-grid spacing** — padding: 13px → Fix: use 12px or 16px
+- **CTA hierarchy inversion** — "Accept all" primary, "Reject all" grey text
+  → Fix: equivalent visual weight (GDPR requirement)
 ```
 
 ---
@@ -146,7 +148,7 @@ design-auditor/
     ├── iconography.md              — Icon families, sizing, touch targets
     ├── navigation.md               — Tabs, breadcrumbs, back buttons, mobile nav, code checks
     ├── tokens.md                   — Design tokens, semantic naming, dark mode architecture
-    ├── figma-mcp.md                — Figma MCP workflow, page structure, safe editing
+    ├── figma-mcp.md                — Figma MCP workflow, Code Connect, page structure, safe editing
     ├── states.md                   — Loading, empty, error, success states + code checks
     ├── microcopy.md                — Button labels, errors, tone, per-role audit guide
     ├── animation.md                — Easing curves, duration scales, reduced motion, code checks
@@ -158,37 +160,53 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.6
+
+**Wireframe to Spec mode**
+
+New output mode alongside the standard audit. When a wireframe is detected (greyscale, box placeholders, skeleton fidelity), the skill offers Spec mode before running a scored audit.
+
+Produces a structured design specification: Layout & Dimensions, Spacing, Typography, Components Required (with states), Copy Placeholders, Interaction Notes, Accessibility Requirements, and an Open Questions section that surfaces gaps the wireframe doesn't answer.
+
+- No score or severity labels — Spec mode annotates, it doesn't audit
+- Estimated values clearly flagged with `~` prefix
+- Uses Figma layer data when available; falls back to standard defaults from reference files
+- Output as downloadable `.md` file
+- Auto-detected from wireframe input; also available in "What next?" widget post-audit
+- Triggers on: "wireframe to spec", "annotate my wireframe", "turn this wireframe into a spec", "spec out this design"
+
+**Canva visual audit report**
+
+After any audit, "Export to Canva" generates a visual report card in Canva — score rings, issue summary, top 3 fixes, positives. Stakeholder-friendly format for sharing with non-technical audiences. Separate from the full technical Markdown export.
+
+**Trigger vocabulary expanded**
+
+Wireframe-specific trigger phrases added to YAML description. Stale version stamps in report templates fixed (were showing v1.2.2).
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ### v1.2.5
 
 **Figma MCP — three new tools integrated**
 
-- **`get_code_connect_suggestions`** (F3.6) — called after `get_design_context` on every Figma audit. Returns AI-suggested mappings between Figma components and code components in the connected repository. Enriches Cat 5 (naming consistency) and Cat 17 (component coverage). Flags Figma components with no code equivalent as 🟡 Warning. Adds a Code Connect line to the report header when data is available.
-- **`get_code_connect_map`** — retrieves confirmed, user-configured Figma→code mappings. Preferred over suggestions when available. Unmapped components detected and flagged. Powers the component mapping table in the Developer Handoff Report.
-- **`create_design_system_rules`** (F5.5) — offered post-audit when Cat 17 score < 70 or component health < 50%. Generates design system enforcement rules for the connected repository based on the Figma file. Always requires explicit user confirmation before calling — never runs automatically.
-- **`figma-mcp.md` updated** — all three tools documented with usage patterns, safety rules, and coverage gap detection logic.
+- **`get_code_connect_suggestions`** — AI-suggested Figma→code component mappings. Enriches Cat 5 and Cat 17. Flags unmapped components. Adds Code Connect line to report header.
+- **`get_code_connect_map`** — confirmed mappings, powers the handoff table
+- **`create_design_system_rules`** — generates enforcement rules for the repo, offered post-audit when token/component health is poor. Always requires explicit confirmation.
 
-**Scoring calibration — Blocker tier added**
-
-Introduced a 🚫 **Blocker** severity level above Critical for issues that violate a legal or compliance standard (WCAG AA, GDPR, PECR, consumer protection law):
+**Scoring calibration — Blocker tier**
 
 | Severity | Deduction | Basis |
 |---|---|---|
-| 🚫 Blocker | −12pts | Legal/compliance violation — WCAG AA, GDPR, PECR |
-| 🔴 Critical | −8pts | Usability failure — must fix before shipping |
-| 🟡 Warning | −4pts | Degrades experience — should fix |
-| 🟢 Tip | −1pt | Polish-level improvement |
+| 🚫 Blocker | −12pts | Legal/compliance — WCAG AA, GDPR, PECR |
+| 🔴 Critical | −8pts | Usability failure |
+| 🟡 Warning | −4pts | Degrades experience |
+| 🟢 Tip | −1pt | Polish |
 
-Blockers are not "worse Criticals" — they are a different class of issue. A Blocker can be cited against a specific WCAG success criterion number or legal provision. A Critical is a design quality judgment.
+Blocker examples: contrast below 4.5:1 (SC 1.4.3), keyboard-inaccessible element (SC 2.1.1), missing alt (SC 1.1.1), pre-checked marketing consent (GDPR), skip link missing (SC 2.4.1).
 
-Blocker examples (with legal basis): contrast below WCAG AA 4.5:1 (SC 1.4.3), keyboard-inaccessible interactive element (SC 2.1.1), missing alt text on meaningful images (SC 1.1.1), `prefers-reduced-motion` absent when animations exist (SC 2.3.3), pre-checked marketing consent (GDPR/PECR), skip link missing or broken (SC 2.4.1).
+Accessibility Score updated: Blockers use −12. Any Blocker appends "⚠️ Contains legal compliance failures".
 
-Accessibility Score updated: Blockers use −12 deductions. Any Blocker in Cat 2, 6, 7, or 16 appends "⚠️ Contains legal compliance failures" to the score display.
-
-Report template updated: 🚫 Blockers section appears above Criticals, with legal basis cited per issue. Section omitted entirely if no Blockers found.
-
-**Trigger vocabulary expanded**
-
-18 new trigger phrases added: "is this GDPR compliant", "check my onboarding", "review my checkout", "is this manipulative", "any dark patterns here", "check my landing page", "is my UI accessible", "check my design system", "is this ethical", "is my form accessible", "check my navigation", "is my dark mode correct", "is this responsive", "review my empty states", "check my error states" and more.
+**Trigger vocabulary expanded** — 15+ new phrases: "is this GDPR compliant", "check my onboarding", "review my checkout", "is this manipulative", "any dark patterns here", "is my form accessible", and more.
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -196,100 +214,61 @@ Report template updated: 🚫 Blockers section appears above Criticals, with leg
 
 **New: Category 18 — Ethical Design & Dark Patterns**
 
-Added an ethics audit layer covering 20 manipulative design patterns across 5 groups:
+20 manipulative patterns across 5 groups: Deceptive Interface, Coercive Flows, Consent & Privacy, False Urgency & Scarcity, Emotional Manipulation.
 
-- **Group A — Deceptive Interface**: Confirmshaming, CTA hierarchy inversion, trick questions, disguised ads, bait and switch, hidden costs, visual misdirection
-- **Group B — Coercive Flows**: Roach motel, obstruction, forced action, nagging
-- **Group C — Consent & Privacy**: Privacy zuckering, pre-checked consent, interface interference, drip pricing
-- **Group D — False Urgency & Scarcity**: Countdown timers, false scarcity, false social proof
-- **Group E — Emotional Manipulation**: Guilt-based copy, fear appeals, toying with emotion
+Ethics severity model: 🔴 Deceptive (−15pts) · 🟡 Questionable (−7pts) · 🟢 Noted (0pts). Ethics Score shown alongside Accessibility Score.
 
-Every pattern includes: definition, real-world example, why it's harmful, Figma detection signals, code detection signals, severity, fix, and a context note to prevent false positives on legitimate persuasion.
-
-**Ethics severity model** (separate from design severity):
-- 🔴 Deceptive — −15pts (actively misleads or coerces)
-- 🟡 Questionable — −7pts (exploitative depending on context)
-- 🟢 Noted — 0pts (persuasive but ethical, informational only)
-
-**Ethics Score** shown alongside Accessibility Score in every report. Bands: 90–100 Ethically sound → < 50 Do not ship.
-
-**New reference file: `ethics.md`** — full pattern taxonomy, detection scope table, ethics severity model, ethics score formula, and an Ethical Persuasion reference of 12 legitimate techniques the skill should never flag.
+New `ethics.md` reference file — 877 lines with full pattern taxonomy, detection signals, and Ethical Persuasion reference.
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.2.3
 
-**Code parity complete — all 17 categories now check from source code**
+Code parity complete — all 17 categories now check from source code.
 
-**Category 3 — Spacing & Layout**
-- Off-grid value detection: flags any px value not divisible by 4, with Tailwind arbitrary value support (`p-[13px]` → 🟡). Same value across 5+ places groups into one issue with count.
-- Padding consistency: mismatched sides on cards/panels, mixed shorthand across same component type
-- z-index audit: values outside expected ranges, `z-index: 9999` on non-overlay elements, duplicate z-index in overlapping contexts, z-index on `position: static`
-- Content margin: missing `max-width`, content touching screen edge, non-responsive margins
-- Logical property suggestions: flags `margin-left/right` as 🟢 Tip — upgrades to 🟡 if RTL audit active
-
-**Category 16 — Navigation Patterns**
-- Semantic nav: `<nav>` vs `<div>`, multiple `<nav>` without `aria-label`
-- Active state: `aria-current="page"` detection, CSS-class-only active state → 🟡, color-only active signal → 🟡
-- Skip navigation link: first focusable element check — missing → 🟡, broken target ID → 🔴 Critical
-- Tab vs nav misuse: `<nav>` for view switching, `role="tablist"` for page routing
-- Keyboard handling: `<div onClick>` without `role="button"` → 🔴, dropdown Escape/arrow key handler check
-- Breadcrumb structure: `<nav aria-label="Breadcrumb">`, `<ol>` requirement, `aria-current="page"` on last item
-
-**Reference files updated:** `spacing.md`, `navigation.md`, `animation.md`, `corner-radius.md` — all with full code-specific audit sections
+- **Cat 3** — off-grid detection, z-index audit, padding consistency, content margin, logical properties
+- **Cat 16** — `<nav>` semantics, `aria-current`, skip link, tab vs nav misuse, keyboard handling, breadcrumb structure
+- **`spacing.md`, `navigation.md`, `animation.md`, `corner-radius.md`** — all with full code-specific audit sections
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.2.2
 
-**Figma workflow:** `get_design_pages` mandatory F1.5 step, multi-page selection widget, "Audit all pages" mode
-
-**Type Scale Stack widget:** triggers on every audit, extracts font sizes from `get_design_context`, deterministic role-mapping algorithm
-
-**Component health metric:** layer tally in F2, coverage % + detached instances + unnamed layers in report header
-
-**Category 5:** 2-frame cross-check for button radius, primary color, font size, input height, icon style
-
-**Category 12:** reads every text node, classifies by role, cites exact text + node ID per issue
-
-**Issue deduplication:** same root cause → one grouped entry with count and node IDs
-
-**Code input:** framework detection (HTML/CSS, React, Vue, Tailwind, CSS-in-JS), before/after code diffs, scope selector for large files
-
-**Code superpowers added:** Cat 6, 7, 8, 9, 10, 13, 17 — direct checks from source code
-
-**Reference files updated:** `color.md`, `states.md`, `typography.md`, `elevation.md`, `microcopy.md`, `figma-mcp.md`
-
-**Standardised report template** with fixed sections, always/conditional labels
-
-**QoL:** merged duplicate Step 0, Tone Guidelines moved to top, `tokens.md` added to reference list, Re-audit and Explain specs, Developer Handoff Report template
+- `get_design_pages` as mandatory F1.5 step — file structure before auditing
+- Type Scale Stack triggers on every audit — extracts font sizes directly from `get_design_context`
+- Component health metric in report header — coverage %, detached instances, unnamed layers
+- 2-frame cross-check for consistency (Cat 5)
+- Microcopy reads every text node, classifies by role, cites exact text + node ID
+- Issue deduplication — same root cause → one grouped entry
+- Framework detection + before/after code diffs for code input
+- Code superpowers added to Cat 6, 7, 8, 9, 10, 13, 17
+- Standardised report template with fixed sections
+- Re-audit spec, Explain an issue depth, Developer Handoff Report template
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.2.1
-- Scoring formula always shown explicitly in every report
-- Color contrast via design tokens — `get_variable_defs` drives Cat 2 programmatically
-- `references/animation.md` added — full Cat 8 reference file
-- Figma fix loop partial failure recovery — typed classification, never stops on single failure
-- Auto-layout operations and component instance caveat added to `figma-mcp.md`
+- Scoring formula always shown in every report
+- Color contrast via design tokens — `get_variable_defs` drives Cat 2
+- `animation.md` added — full Cat 8 reference
+- Figma fix loop partial failure recovery
+- Auto-layout ops and component instance caveat in `figma-mcp.md`
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.2.0
 - 5 interactive audit widgets: Type Scale Stack, Contrast Checker, 8pt Grid Visualizer, States Coverage Map, Issue Priority Matrix
 - Smart defaults — scope, stage, WCAG level inferred from request
-- Component-type detection — auto-detects and skips irrelevant categories
-- Confidence scoring acts on audit — 🟢/🟡/🔴 behaviours
+- Component-type detection and confidence scoring
 - Session progress tracker with sparkline
-- Full Korean coverage for all new features
+- Full Korean coverage
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.1.5
 - Figma Variables integration, audit goal context, WCAG level selector
-- Separate Accessibility Score, Developer handoff report mode
-- "Fix all Critical" loop with per-issue confirmation
-- Bilingual widget labels
+- Separate Accessibility Score, Developer handoff mode
+- Fix all Critical loop, bilingual widget labels
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -300,12 +279,12 @@ Every pattern includes: definition, real-world example, why it's harmful, Figma 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.1.3
-- Figma MCP fallback, per-category scores, before/after diffs, re-audit delta mode
+- Figma MCP fallback, per-category scores, before/after diffs, re-audit delta
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.1.2
-- Deterministic scoring formula, audit confidence level, strict output template
+- Deterministic scoring formula, confidence level, strict output template
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -315,7 +294,7 @@ Every pattern includes: definition, real-world example, why it's harmful, Figma 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.1.0
-- 17 categories total: added Corner Radius, Elevation & Shadows, Iconography, Navigation Patterns, Design Tokens
+- 17 categories: added Corner Radius, Elevation, Iconography, Navigation, Design Tokens
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -326,12 +305,12 @@ Every pattern includes: definition, real-world example, why it's harmful, Figma 
 
 ## Contributing
 
-Found a design rule that should be in here? Open an issue or PR. The goal is to make this the most comprehensive plain-language design reference available inside Claude.
+Found a design rule that should be in here? Open an issue or PR.
 
 Areas that could use expansion:
+- UX flow analysis & information architecture
 - Data visualization & charts
 - Native mobile (iOS/Android) specific patterns
-- UX flow analysis & information architecture
 - Print / PDF layout rules
 
 ---

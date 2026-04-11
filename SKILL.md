@@ -1,7 +1,7 @@
 ---
 name: design-auditor
-version: 1.2.5
-description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs category-specific code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, and generates a structured developer handoff report. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, review my checkout, is this manipulative, any dark patterns here, check my landing page, is my UI accessible, check my design system, is this ethical, is my form accessible, check my navigation, is my dark mode correct, is this responsive, review my empty states, check my error states."
+version: 1.2.6
+description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, generates developer handoff reports, and converts wireframes into annotated dev-ready specs. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, review my checkout, is this manipulative, is my UI accessible, check my design system, is this ethical, is my form accessible, is my dark mode correct, is this responsive, review my empty states, wireframe to spec, annotate my wireframe, turn this wireframe into a spec, spec out this design."
 ---
 
 # Design Checker Skill
@@ -80,6 +80,13 @@ Before presenting any widget, infer as much as possible from what was submitted.
 - Polished visuals, real content, component library → Dev handoff
 - User says "live", "shipped", "in production", "our app" → Production
 - No signal → default to Dev handoff (the strictest safe default)
+
+**Wireframe detection — special case:**
+If the input is clearly a wireframe (greyscale, box placeholders, no real content, skeleton-level fidelity), offer the **Wireframe to Spec** mode before running a standard audit:
+- English: *"This looks like a wireframe — would you like a design spec output instead of a standard audit? I can annotate dimensions, spacing, states required, copy placeholders, and component suggestions."*
+- Korean: *"와이어프레임처럼 보입니다 — 표준 감사 대신 디자인 스펙 출력을 원하시나요? 치수, 간격, 필요한 상태, 카피 플레이스홀더, 컴포넌트 제안을 주석으로 작성해 드릴 수 있습니다."*
+If yes → run Wireframe to Spec mode (see Step 4).
+If no → run standard audit at Early concept stage with relaxed severity.
 
 **Infer WCAG level:**
 - Always default to AA. Only ask if the user explicitly mentions AAA, government/legal context, or "enhanced accessibility."
@@ -427,7 +434,8 @@ Declare confidence based on input type, then **change audit behaviour accordingl
 - Add a banner at the top of the report in the user's detected language:
   - English: *⚠️ **Medium confidence audit** — input was a screenshot. Values are estimated from visual inspection. For an exact audit, share the Figma file or component code.*
   - Korean: *⚠️ **중간 신뢰도 감사** — 스크린샷을 기반으로 했습니다. 값은 시각적 검토에 의해 추정되었습니다. 정확한 감사를 위해 Figma 파일 또는 컴포넌트 코드를 공유해 주세요.*
-- Apply a **−50% deduction modifier** to all 🟡 Warning and 🟢 Tip issues that depend on exact values. Only 🔴 Critical visual issues (clear contrast failures, missing states visible in screenshot) take full deductions.
+- Apply a **−50% deduction modifier** to all 🟡 Warning and 🟢 Tip issues that depend on exact values. Only 🔴 Critical and 🚫 Blocker visual issues (clear contrast failures, missing states visible in screenshot) take full deductions.
+- **🚫 Blockers on screenshots:** Only flag as Blocker if the violation is visually unambiguous (e.g. clearly failing contrast, clearly missing label). Downgrade to 🔴 Critical with a note if confidence is insufficient to confirm a legal violation.
 
 **At 🟢 High confidence (Figma or code):**
 - Cite exact values in every issue: "padding: 13px — should be 12px or 16px (8pt grid)"
@@ -1342,13 +1350,38 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 
 Start at **100 points**. Deduct for every issue found:
 
-| Severity | Deduction | Example |
+| Severity | Deduction | When to use |
 |---|---|---|
-| 🔴 Critical | **-8 points** | No text contrast, missing form labels, broken dark mode |
-| 🟡 Warning | **-4 points** | Off-grid spacing, inconsistent radius, unused prop |
-| 🟢 Tip | **-1 point** | Deprecated attribute, minor naming improvement |
+| 🚫 **Blocker** | **−12 points** | Violates a legal or compliance standard — WCAG AA, GDPR, PECR, consumer protection law. Cannot ship as-is. |
+| 🔴 **Critical** | **−8 points** | Breaks usability or accessibility for a significant user population. Must fix before shipping. |
+| 🟡 **Warning** | **−4 points** | Degrades experience. Should fix. |
+| 🟢 **Tip** | **−1 point** | Polish-level improvement. Nice to have. |
 
 **Floor is 0** — score never goes negative.
+
+**Blocker vs Critical — the distinction:**
+Blockers are not "worse Criticals" — they are a different class of issue. A Blocker violates an external legal or compliance standard that exists independently of design opinion. A Critical breaks usability badly but is a design quality failure, not a legal one.
+
+```
+Blocker examples (legal/compliance basis):
+  🚫 Text contrast below WCAG AA 4.5:1 (Cat 2) — WCAG 2.1 SC 1.4.3
+  🚫 Interactive element with no accessible name (Cat 6) — WCAG 2.4.6
+  🚫 Keyboard-inaccessible interactive element (Cat 6) — WCAG 2.1.1
+  🚫 Meaningful image missing alt text (Cat 6) — WCAG 1.1.1
+  🚫 prefers-reduced-motion absent when animations exist (Cat 8) — WCAG 2.3.3
+  🚫 Pre-checked marketing consent checkbox (Cat 18) — GDPR/PECR
+  🚫 Non-essential cookies defaulting to ON (Cat 18) — GDPR/ePrivacy
+  🚫 Skip link missing or broken (Cat 16) — WCAG 2.4.1
+  🚫 Form input with no label (Cat 7) — WCAG 1.3.1
+
+Critical examples (usability basis, not legal):
+  🔴 Missing touch target size (Cat 6) — best practice, not strict law
+  🔴 Missing error/empty/loading states (Cat 11)
+  🔴 CTA hierarchy inversion on non-consent screens (Cat 18)
+  🔴 Off-brand or broken dark mode (Cat 9)
+```
+
+**When in doubt between Blocker and Critical:** If you can cite a specific WCAG success criterion number, GDPR article, or consumer law provision — it's a Blocker. If it's a usability or design quality judgment — it's a Critical.
 
 ### Issue Deduplication — Required
 
@@ -1380,22 +1413,19 @@ This keeps reports scannable. A report with 3 grouped issues is more actionable 
 ### Accessibility Score
 In addition to the overall score, always surface a separate **Accessibility Score** combining Categories 2, 6, 7, and 16:
 
-- Start at 100, apply same deduction formula to issues in those 4 categories only
+- Start at 100, apply the same 4-tier deduction formula to issues in those 4 categories only
+- 🚫 Blocker issues in these categories use −12 (legal violations — WCAG AA)
 - Display as: **Accessibility Score: X/100**
-- Scoring bands: 90–100 = WCAG compliant, 70–89 = minor gaps, 50–69 = significant gaps, <50 = failing
-
-> **Accessibility Score: 74/100** — 2 contrast failures, 1 missing form label. Not yet WCAG AA compliant.
-
-Teams often need to track accessibility independently from overall design quality — this score makes that easy.
+- If any 🚫 Blocker issues exist: append *"⚠️ Contains legal compliance failures"*
 
 Scoring bands:
-- **90–100** → Production-ready
-- **70–89** → Solid, minor fixes needed
-- **50–69** → Needs work before shipping
-- **< 50** → Foundational issues, significant rework needed
+- **90–100** → WCAG AA compliant — production-ready
+- **70–89** → Minor gaps, no Blockers
+- **50–69** → Significant gaps — likely has Blockers
+- **< 50** → Failing — legal risk, do not ship
 
 **Always show the maths:**
-> Score: 100 − (3 × 🔴 8pts) − (4 × 🟡 4pts) − (2 × 🟢 1pt) = 100 − 24 − 16 − 2 = **58/100**
+> Score: 100 − (1 × 🚫 12) − (2 × 🔴 8) − (3 × 🟡 4) − (1 × 🟢 1) = **59/100** ⚠️ Contains legal compliance failures
 
 ---
 
@@ -1434,11 +1464,13 @@ audit, share the Figma file or component code.
 #### SCORES *(always)*
 ```
 ### Overall Score: [X/100]
-**100 − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]/100**
+**100 − ([N] × 🚫 12) − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]/100**
 [One sentence — what dragged the score down most.]
+*(Omit 🚫 line from arithmetic if no Blockers found)*
 
 ### Accessibility Score: [X/100]  *(Categories 2, 6, 7, 16)*
-[Band label: WCAG compliant / minor gaps / significant gaps / failing]
+[Band label: WCAG AA compliant / minor gaps / significant gaps / failing]
+*(Append "⚠️ Contains legal compliance failures" if any 🚫 Blockers present)*
 
 ### Ethics Score: [X/100]  *(Category 18)*
 [Band label: Ethically sound / minor concerns / significant manipulation risk / deliberately deceptive]
@@ -1447,8 +1479,8 @@ audit, share the Figma file or component code.
 ### Score by Category
 | Category | Score | Issues |
 |---|---|---|
-| Typography | X/10 | 1 🔴, 0 🟡 |
-| Color & Contrast | X/10 | 0 🔴, 2 🟡 |
+| Typography | X/10 | 0 🚫, 1 🔴, 0 🟡 |
+| Color & Contrast | X/10 | 1 🚫, 0 🔴, 2 🟡 |
 | [other audited categories] | X/10 | ... |
 *(Only include categories that were audited. Skip clearly N/A ones.)*
 ```
@@ -1457,6 +1489,12 @@ audit, share the Figma file or component code.
 
 #### ISSUES *(always — follow deduplication rules)*
 ```
+### 🚫 Blockers (−12pts each) *(legal/compliance violations — cannot ship)*
+- **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
+  Legal basis: [WCAG SC X.X.X / GDPR Article X / PECR]
+  *Nodes: [id1], [id2] (+N more)* *(Figma)* / *Line [N]* *(code)*
+  → Want me to fix this? I can apply it directly.
+
 ### 🔴 Critical Issues (−8pts each)
 - **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
   Why: [One sentence rule reference]
@@ -1470,6 +1508,8 @@ audit, share the Figma file or component code.
 ### 🟢 Tips (−1pt each)
 - **[Issue name]** — [What's wrong] → Fix: [Specific how-to]
 ```
+
+*(Omit the 🚫 Blockers section entirely if none are found — do not show an empty section)*
 
 ---
 
@@ -1590,10 +1630,12 @@ After every report and radar chart, present a **"What next?" widget** using the 
 - options:
   - "Fix all Critical issues / 심각한 문제 모두 수정"
   - "Fix a specific issue / 특정 문제 수정"
+  - "Wireframe to Spec / 와이어프레임 스펙 출력"
   - "Developer handoff report / 개발자 전달 보고서"
   - "Explain an issue / 문제 설명"
   - "Re-audit / 재감사"
   - "Export report / 보고서 내보내기"
+  - "Export to Canva / Canva로 내보내기"
   - "Show session progress / 세션 진행 상황"
 
 **If "Fix all Critical issues"** → loop through each 🔴 issue one by one:
@@ -1671,7 +1713,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ---
-*Generated by Design Auditor Skill v1.2.2*
+*Generated by Design Auditor Skill v1.2.6*
 ```
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
@@ -1679,6 +1721,140 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - All widgets rendered as static markdown tables (scores, issue list, category breakdown)
 - The dev handoff section appended at the end
 - Filename: `design-audit-[component-name]-[date].md`
+
+**If "Export to Canva"** → generate a visual audit report card in Canva using the Canva connector. This is a stakeholder-friendly format — not the raw markdown report, but a clean visual summary.
+
+```
+When to offer:
+  → After any completed audit when Canva connector is available
+  → Add "Export to Canva / Canva로 내보내기" as an option in the "What next?" widget
+
+What to generate (use Canva generate-design tool, type: "doc"):
+  Query: "Design audit report card with score [X/100], 
+          accessibility score [X/100], ethics score [X/100], 
+          [N] critical issues, [N] warnings, [N] tips. 
+          Professional, clean layout with score rings and issue summary."
+
+Content to include in the Canva doc:
+  1. Header: "Design Audit — [component/page name]" + date
+  2. Score ring or badge: Overall [X/100] · A11y [X/100] · Ethics [X/100]
+  3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
+  4. Top 3 critical issues with one-line fix each
+  5. What's working well (2–3 positives)
+  6. Footer: "Generated by Design Auditor Skill v1.2.6"
+
+After generating:
+  → Present the Canva design to the user
+  → Note: "This is a shareable visual summary — for the full technical report, use Export Report."
+
+If Canva connector is unavailable:
+  → Skip this option silently in the widget. Do not mention it.
+```
+
+**If "Wireframe to Spec"** → produce a structured design specification document. This mode is different from the audit — it doesn't score, it annotates. Use all available context data (Figma layer data, screenshot, code structure) to produce a spec a developer could build from.
+
+```
+## 📐 Design Spec — [Component/Screen Name]
+
+**Input type:** [Figma wireframe / Greyscale screenshot / Sketch]
+**Spec generated:** [date]
+**Fidelity:** Wireframe — values are recommended, not measured
+
+---
+
+### Layout & Dimensions
+| Element | Width | Height | Notes |
+|---|---|---|---|
+| [Container] | [value or "full width"] | [value or "auto"] | [note] |
+| [Section] | [value] | [value] | [note] |
+*(Extract from Figma layer data where available. Estimate from screenshot where not.)*
+*(Flag estimated values with ~ prefix: ~320px)*
+
+---
+
+### Spacing
+| Location | Value | Notes |
+|---|---|---|
+| Page margins | 16px (mobile) / 48px (desktop) | Standard if not specified |
+| Section gap | [value] | Between major sections |
+| Component padding | [value] | Inside cards/containers |
+*(Recommend 8pt grid values. If wireframe shows rough spacing, snap to nearest grid value.)*
+
+---
+
+### Typography
+| Role | Font size | Weight | Line height | Notes |
+|---|---|---|---|---|
+| Heading | [value] | Bold | 1.2× | |
+| Subheading | [value] | SemiBold | 1.35× | |
+| Body | 16px | Regular | 1.5× | Minimum recommended |
+| Caption | 13px | Regular | 1.4× | |
+*(Fill with wireframe values where readable. Use standard scale where not specified.)*
+
+---
+
+### Components Required
+List every UI component visible or implied in the wireframe:
+| Component | Variant needed | States required | Notes |
+|---|---|---|---|
+| [Button] | [Primary/Secondary/Ghost] | Default, Hover, Loading, Disabled | |
+| [Input] | [Text/Select/Checkbox] | Default, Focus, Error, Disabled | |
+| [Card] | [Standard] | Default, Hover | |
+*(Infer missing states — every interactive element needs at minimum: default, hover/focus, disabled)*
+
+---
+
+### Copy Placeholders
+For every text placeholder in the wireframe, suggest final copy:
+| Location | Placeholder shown | Suggested copy | Notes |
+|---|---|---|---|
+| [CTA button] | "Button" | "Get started" or "[action verb]" | Use specific verb |
+| [Empty state] | "No data" | "No [items] yet — [action to create first]" | |
+| [Error state] | "Error" | "Something went wrong — [specific next step]" | |
+*(Follow microcopy.md rules: buttons are verbs, errors say what went wrong + how to fix)*
+
+---
+
+### Interaction Notes
+Document implied interactions not shown in the wireframe:
+- [ ] [Element]: on click → [expected behaviour]
+- [ ] [Form]: validate on blur, not on submit
+- [ ] [Modal trigger]: trap focus when open, restore on close
+- [ ] [Scroll]: [sticky header / infinite scroll / paginated?]
+
+---
+
+### Accessibility Requirements
+Minimum requirements for this component/screen:
+- [ ] All interactive elements have visible focus states
+- [ ] Form inputs have visible labels (not placeholder-only)
+- [ ] Images have alt text slots
+- [ ] Reading order: [describe logical DOM order]
+- [ ] Keyboard navigation: [describe tab flow]
+- [ ] [Any WCAG-specific requirements based on the component type]
+
+---
+
+### Open Questions
+Things the wireframe doesn't answer that must be decided before development:
+- [ ] [Question about content/data source]
+- [ ] [Question about edge cases — empty state, max content, overflow]
+- [ ] [Question about responsive behaviour at mobile breakpoint]
+- [ ] [Question about loading state if this fetches data]
+
+---
+*Generated by Design Auditor Skill v1.2.6 · Wireframe to Spec mode*
+*Values marked ~ are estimated. Confirm with designer before development.*
+```
+
+**Wireframe to Spec mode behaviour:**
+- Do NOT run a scored audit — no score, no severity labels, no issue list
+- Infer missing values using standard defaults from reference files (spacing.md, typography.md, states.md)
+- Flag every inferred/estimated value clearly with ~ prefix or "(recommended)" note
+- Always include Open Questions — gaps in the wireframe are valuable to surface
+- If Figma MCP is active: use `get_design_context` layer data for exact values, fall back to estimates where data is missing
+- If screenshot only: all layout values are estimated — state this clearly at the top
+- Output as a downloadable `.md` file: `design-spec-[component-name]-[date].md`
 
 Then respond based on their selection. If they dismiss the widget, fall back to a language-appropriate line:
 - English: *"Want me to apply any of these fixes? I can edit the code directly, or if you're in Figma, I can make changes there too. Or if you'd rather learn how to do it yourself, I can walk you through it step by step."*
