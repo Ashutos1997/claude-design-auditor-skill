@@ -160,6 +160,41 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.7
+
+**URL inputs — full support added**
+
+The skill now recognises and audits from any URL type, not just Figma links.
+
+| URL Type | Confidence | How it's handled |
+|---|---|---|
+| Live website (`https://...`) | 🟡 Medium | `web_fetch`, login handling, multi-page offer |
+| Vercel / Netlify preview | 🟡 Medium | Same as live website |
+| GitHub file URL | 🟢 High | Converts to raw URL, full code audit |
+| GitHub repo URL | 🟡 Medium | Browses key files, scope selector widget |
+| CodeSandbox / StackBlitz | 🟡–🟢 | Source if accessible, preview fallback |
+| CodePen | 🟡 Medium | Debug URL fetch, source extraction |
+| Storybook | 🟡 Medium | Component/variant detection from URL path |
+
+Each URL type has a dedicated spec: how to fetch, what confidence to set, what limitations to declare in the report header, how to handle login walls, and what to offer the user after the audit.
+
+GitHub file URLs get full 🟢 High confidence — raw source is treated identically to pasted code. All other URL types get 🟡 Medium with explicit limitation notes in the report header.
+
+**Agent compliance — mandatory output enforcement**
+
+Following reports of third-party agents (e.g. TRAE Solo) producing free-form UX reviews instead of scored reports, two mandatory enforcement notices were added:
+
+- `⚠️ OUTPUT FORMAT IS MANDATORY — DO NOT DEVIATE` at the top of Step 2
+- `⚠️ MANDATORY — ALL AGENTS — NO EXCEPTIONS` at the top of the Strict Output Template
+
+Both explicitly prohibit substituting a generic critique for the scored report. Skipping the score is never acceptable — agents must estimate and flag with 🟡 Medium confidence if uncertain.
+
+**Input widget updated** — "Live URL" and "GitHub URL" added as input type options alongside Figma, Screenshot, and Code.
+
+**All version stamps updated** — report footers now correctly show v1.2.7.
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ### v1.2.6
 
 **Wireframe to Spec mode**
