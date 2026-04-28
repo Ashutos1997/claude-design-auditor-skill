@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.6
+version: 1.2.7
 description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, generates developer handoff reports, and converts wireframes into annotated dev-ready specs. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, review my checkout, is this manipulative, is my UI accessible, check my design system, is this ethical, is my form accessible, is my dark mode correct, is this responsive, review my empty states, wireframe to spec, annotate my wireframe, turn this wireframe into a spec, spec out this design."
 ---
 
@@ -56,14 +56,155 @@ Then **explain every term you use** inline (e.g., if you say "visual hierarchy",
 | Input Type | What to Do |
 |---|---|
 | **Figma URL or link** | Follow the **Figma MCP Workflow** below |
+| **Live website URL** | Fetch via `web_fetch`, treat as code input — see URL Input Spec |
+| **GitHub file URL** | Fetch raw source, treat as code input — see URL Input Spec |
+| **GitHub repo URL** | Browse key files, treat as code input — see URL Input Spec |
+| **Vercel / Netlify preview URL** | Same as live website URL |
+| **CodeSandbox / StackBlitz / CodePen URL** | Fetch rendered output + source — see URL Input Spec |
+| **Storybook URL** | Fetch component source — see URL Input Spec |
 | **Code (HTML/CSS/React/Vue)** | Read the file(s) directly |
 | **Screenshot or image** | Examine the attached image |
 | **Description only** | Ask for visuals — descriptions miss too much |
 
+### URL Input Spec
+
+When the user shares any non-Figma URL, apply this decision tree before auditing:
+
+---
+
+#### Live Website URL (`https://domain.com/...`)
+*Includes Vercel previews (`*.vercel.app`), Netlify previews (`*.netlify.app`), staging URLs*
+
+```
+1. Fetch the URL using web_fetch to retrieve rendered HTML/CSS
+2. Treat fetched content as code input — run Step 1.6 framework detection
+3. Set confidence: 🟡 Medium
+   Limitations:
+   - Cannot see non-rendered states (hover, focus, error, loading)
+   - Cannot audit authenticated pages without credentials
+   - Dynamic JS-rendered content may be incomplete
+   - Note in REPORT HEADER: "Live URL — non-rendered states not assessed"
+
+4. Login redirect handling:
+   → Inform user: "This page requires login. I can audit the login page,
+     or share credentials and I'll attempt the authenticated experience."
+   → Never guess at content behind a login wall
+
+5. Credentials handling:
+   → Note in REPORT HEADER: "Authenticated audit — credentials provided"
+   → Never repeat credentials back in the report output
+
+6. Multi-page offer (after audit):
+   → "Would you like me to audit other pages on this site?"
+```
+
+---
+
+#### GitHub File URL (`github.com/user/repo/blob/main/path/to/file`)
+
+```
+1. Convert to raw URL: replace /blob/ with /raw/ or use raw.githubusercontent.com
+   Example: github.com/user/repo/blob/main/src/Button.tsx
+         → raw.githubusercontent.com/user/repo/main/src/Button.tsx
+2. Fetch the raw file content via web_fetch
+3. Treat as direct code input — full confidence 🟢 High
+4. Run Step 1.6 framework detection on the file content
+5. Note in REPORT HEADER: "GitHub file: [filename] · [repo]"
+
+If the URL points to a directory (not a file):
+  → Treat as GitHub repo URL (see below)
+```
+
+---
+
+#### GitHub Repo URL (`github.com/user/repo`)
+
+```
+1. Fetch the repo's default branch file listing
+2. Identify the most relevant files to audit:
+   Priority order:
+   a. src/components/ or components/ — UI components
+   b. src/App.tsx / App.vue / index.html — root component
+   c. src/styles/ or *.css / *.scss / tailwind.config.js — style files
+   d. package.json — detect framework/dependencies
+
+3. Fetch the 2–3 most relevant component/style files
+4. Set confidence: 🟡 Medium (partial codebase view)
+5. Note in REPORT HEADER: "GitHub repo: [repo name] · [N] files audited"
+
+Present scope selector before auditing:
+  "I found [N] component files in this repo. Which should I focus on?"
+  Options: [list of found component files] + "Audit all visible files"
+
+If repo is private or returns 404:
+  → "This repo is private or unavailable. Share the code directly
+     or make the repo public to audit it."
+```
+
+---
+
+#### CodeSandbox / StackBlitz URL
+
+```
+CodeSandbox: codesandbox.io/s/[id] or codesandbox.io/p/sandbox/[id]
+StackBlitz:  stackblitz.com/edit/[id]
+
+1. Fetch the URL to get the rendered preview HTML
+2. Also attempt to fetch the source files if accessible:
+   CodeSandbox API: codesandbox.io/api/v1/sandboxes/[id]
+   StackBlitz: check for embedded source in the page
+3. If source available → treat as code input (🟢 High confidence)
+4. If preview only → treat as screenshot/live URL (🟡 Medium confidence)
+5. Note in REPORT HEADER: "CodeSandbox/StackBlitz — [source/preview only]"
+```
+
+#### CodePen URL
+
+```
+CodePen: codepen.io/[user]/pen/[id]
+
+1. Fetch the debug URL for clean HTML: codepen.io/[user]/debug/[id]
+   Or fetch the embed: cdpn.io/pen/debug/[id]
+2. Treat rendered output as live URL input (🟡 Medium confidence)
+3. CSS/JS source is often visible in page source — extract if available
+4. Note in REPORT HEADER: "CodePen — rendered preview audited"
+```
+
+---
+
+#### Storybook URL (`[domain]/storybook` or `storybook.[domain]`)
+
+```
+Detecting Storybook: URL contains /storybook, /story/, ?path=/story/
+or page title contains "Storybook"
+
+1. Fetch the Storybook URL
+2. Identify component being shown from the URL path:
+   ?path=/story/button--primary → auditing Button component, Primary variant
+3. Treat rendered HTML as live URL input for visual checks
+4. If source iframe is accessible, extract component HTML for code checks
+5. Set confidence: 🟡 Medium
+6. Note in REPORT HEADER: "Storybook — [component name] · [variant]"
+
+Multi-component offer:
+  → After audit: "This Storybook has other components. Want me to audit
+    another? Share the story URL for that component."
+```
+
+---
+
+**REPORT HEADER format for all URL inputs:**
+```
+**Input:** [URL type] — [url or repo/filename]
+**Type:** [Live URL / GitHub / CodeSandbox / Storybook]
+**Confidence:** 🟡 Medium (or 🟢 High for GitHub file)
+**Limitations:** [what can't be assessed — list the specific gaps]
+```
+
 If nothing shared yet, use ask_user_input:
 - question: "What are you sharing for the audit?"
 - type: single_select
-- options: "Figma link / Figma 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
+- options: "Figma link / Figma 링크" / "Live URL / 라이브 URL" / "GitHub URL / GitHub 링크" / "Screenshot / 스크린샷" / "Code (HTML/CSS/React) / 코드" / "Written description / 텍스트 설명"
 
 ### Step 1b: Smart Defaults (infer before asking)
 
@@ -662,6 +803,14 @@ If yes → output diffs for every critical in severity order, then warnings if r
 ---
 
 ## Step 2: Run the Design Audit
+
+> ⚠️ **OUTPUT FORMAT IS MANDATORY — DO NOT DEVIATE**
+> Every audit MUST end with a scored report using the Strict Output Template in Step 3.
+> This means: a numeric score out of 100, score arithmetic shown explicitly, issues grouped
+> by severity (🚫/🔴/🟡/🟢), an Accessibility Score, and the What Next widget.
+> Do NOT produce a generic UX review, bullet-point critique, or free-form feedback instead.
+> If you are unsure of any value, estimate it and flag with 🟡 Medium confidence — but always
+> produce the scored report. Skipping the score is never acceptable.
 
 Check each category. Skip clearly inapplicable ones. Mark each issue:
 
@@ -1431,7 +1580,12 @@ Scoring bands:
 
 ### Strict Output Template
 
-Every audit report must use this exact structure — no exceptions, no reordering. Sections marked *(always)* appear on every audit. Sections marked *(conditional)* appear only when applicable.
+> ⚠️ **MANDATORY — ALL AGENTS — NO EXCEPTIONS**
+> This template is not optional. Every audit report must use this exact structure regardless
+> of input type (Figma, code, screenshot, live URL, wireframe). Do not substitute a free-form
+> critique, UX review, or bullet-point list. The scored report IS the output.
+
+Every audit report must use this exact structure — sections marked *(always)* appear on every audit. Sections marked *(conditional)* appear only when applicable.
 
 ---
 
@@ -1544,7 +1698,7 @@ New issues found: [N]
 #### REPORT FOOTER *(always)*
 ```
 ---
-*Audit run with Design Auditor Skill v1.2.2 · [input type] · [confidence level]*
+*Audit run with Design Auditor Skill v1.2.7 · [input type] · [confidence level]*
 *Re-audit after fixes to track progress. / 수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
 ```
 
@@ -1713,7 +1867,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ---
-*Generated by Design Auditor Skill v1.2.6*
+*Generated by Design Auditor Skill v1.2.7*
 ```
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
@@ -1741,7 +1895,7 @@ Content to include in the Canva doc:
   3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
   4. Top 3 critical issues with one-line fix each
   5. What's working well (2–3 positives)
-  6. Footer: "Generated by Design Auditor Skill v1.2.6"
+  6. Footer: "Generated by Design Auditor Skill v1.2.7"
 
 After generating:
   → Present the Canva design to the user
@@ -1843,7 +1997,7 @@ Things the wireframe doesn't answer that must be decided before development:
 - [ ] [Question about loading state if this fetches data]
 
 ---
-*Generated by Design Auditor Skill v1.2.6 · Wireframe to Spec mode*
+*Generated by Design Auditor Skill v1.2.7 · Wireframe to Spec mode*
 *Values marked ~ are estimated. Confirm with designer before development.*
 ```
 
