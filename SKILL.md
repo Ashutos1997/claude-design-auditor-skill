@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.8
+version: 1.2.9
 description: "Audit designs against 19 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns, ethical design, and Nielsen's usability heuristics. Outputs before/after code diffs, generates developer handoff reports, and converts wireframes into annotated dev-ready specs. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, is this manipulative, is my UI accessible, is this ethical, is my form accessible, is my dark mode correct, is this responsive, wireframe to spec, annotate my wireframe, heuristic review, Nielsen audit, usability heuristics."
 ---
 
@@ -195,10 +195,17 @@ Multi-component offer:
 
 **REPORT HEADER format for all URL inputs:**
 ```
+English:
 **Input:** [URL type] — [url or repo/filename]
 **Type:** [Live URL / GitHub / CodeSandbox / Storybook]
 **Confidence:** 🟡 Medium (or 🟢 High for GitHub file)
 **Limitations:** [what can't be assessed — list the specific gaps]
+
+Korean:
+**입력:** [URL 유형] — [url 또는 저장소/파일명]
+**유형:** [라이브 URL / GitHub / CodeSandbox / Storybook]
+**신뢰도:** 🟡 보통 (GitHub 파일의 경우 🟢 높음)
+**제한사항:** [평가할 수 없는 항목 — 구체적인 제한 목록]
 ```
 
 If nothing shared yet, use ask_user_input:
@@ -1503,43 +1510,52 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 - Always on Full audits
 - Skip on Quick audits unless user specifically requests heuristic review
 - Triggers on: "heuristic review", "Nielsen audit", "usability heuristics", "H1/H2/H6..." etc.
+- Korean triggers: "휴리스틱 검토", "닐슨 감사", "사용성 휴리스틱", "H1/H2/H6 확인"
 
 **Usability Score** is separate from the Overall Score and the Accessibility Score. Start at 100, apply standard deduction tiers. Display as: **Usability Score: X/100**
 
+Scoring bands:
+- **90–100** → Heuristically sound / 사용성 기준 충족
+- **70–89** → Minor usability gaps / 사소한 사용성 문제
+- **50–69** → Significant usability issues / 심각한 사용성 문제
+- **< 50** → Fundamental failures / 근본적인 사용성 실패
+
 **Checklist:**
 
-*H1 — Visibility of System Status (gaps only)*
-- [ ] **Async button feedback** — Every button triggering an async action has a loading/disabled state during processing
-- [ ] **Form submit confirmation** — Every form submission confirms success with a toast or confirmation screen
-- [ ] **Multi-step progress** — Flows with 3+ steps have a visible progress indicator
+*H1 — Visibility of System Status (gaps only) / 시스템 상태 가시성*
+- [ ] **Async button feedback / 비동기 버튼 피드백** — Every button triggering an async action has a loading/disabled state during processing
+- [ ] **Form submit confirmation / 폼 제출 확인** — Every form submission confirms success with a toast or confirmation screen
+- [ ] **Multi-step progress / 멀티스텝 진행 표시** — Flows with 3+ steps have a visible progress indicator
 
-*H2 — Match Between System and Real World*
-- [ ] **No jargon in UI** — No raw error codes, stack traces, or developer terms in user-facing copy
-- [ ] **Icon meaning** — Icons match their conventional real-world meaning in context
-- [ ] **Locale-aware formats** — Dates and numbers use `Intl` formatting, not hardcoded patterns
+*H2 — Match Between System and Real World / 시스템과 현실 세계의 일치*
+- [ ] **No jargon in UI / UI 내 전문 용어 없음** — No raw error codes, stack traces, or developer terms in user-facing copy
+- [ ] **Icon meaning / 아이콘 의미** — Icons match their conventional real-world meaning in context
+- [ ] **Locale-aware formats / 로케일 형식** — Dates and numbers use `Intl` formatting, not hardcoded patterns
 
-*H3 — User Control and Freedom (gaps only)*
-- [ ] **Modal exit** — All modals have a visible close mechanism and respond to Escape key
-- [ ] **Flow back navigation** — Multi-step flows have a Back option on every step except the first
-- [ ] **Destructive confirmation** — Permanent destructive actions have confirmation dialogs naming what's being deleted
+*H3 — User Control and Freedom (gaps only) / 사용자 제어 및 자유*
+- [ ] **Modal exit / 모달 종료** — All modals have a visible close mechanism and respond to Escape key
+- [ ] **Flow back navigation / 플로우 뒤로 가기** — Multi-step flows have a Back option on every step except the first
+- [ ] **Destructive confirmation / 파괴적 작업 확인** — Permanent destructive actions have confirmation dialogs naming what's being deleted
 
-*H6 — Recognition Rather Than Recall*
-- [ ] **Nav labels** — Primary navigation items have visible text labels alongside icons
-- [ ] **Persistent labels** — Form labels remain visible during and after input
-- [ ] **Selection visibility** — Dropdown triggers show the currently selected value; selected options are visually distinct
+*H6 — Recognition Rather Than Recall / 기억보다 인식*
+- [ ] **Nav labels / 내비게이션 라벨** — Primary navigation items have visible text labels alongside icons
+- [ ] **Persistent labels / 지속적인 라벨** — Form labels remain visible during and after input
+- [ ] **Selection visibility / 선택 가시성** — Dropdown triggers show the currently selected value; selected options are visually distinct
 
-*H7 — Flexibility and Efficiency of Use*
-- [ ] **Keyboard shortcuts** — Power user shortcuts are hinted in tooltips on frequently-used actions (productivity tools)
-- [ ] **Bulk actions** — Management-oriented lists support bulk selection where clearly warranted
-- [ ] **Preference persistence** — User preferences are saved across sessions where relevant
+*H7 — Flexibility and Efficiency of Use / 사용의 유연성 및 효율성*
+- [ ] **Keyboard shortcuts / 키보드 단축키** — Power user shortcuts are hinted in tooltips on frequently-used actions (productivity tools)
+- [ ] **Bulk actions / 일괄 작업** — Management-oriented lists support bulk selection where clearly warranted
+- [ ] **Preference persistence / 환경설정 저장** — User preferences are saved across sessions where relevant
 
-*H10 — Help and Documentation*
-- [ ] **Helper text** — Fields with format requirements show guidance before the user submits
-- [ ] **Actionable errors** — Every error message states what went wrong AND how to fix it
-- [ ] **Contextual help** — Complex or technical fields have tooltips
-- [ ] **Onboarding** — Empty states and first-use screens give clear next-step guidance
+*H10 — Help and Documentation / 도움말 및 문서*
+- [ ] **Helper text / 도움말 텍스트** — Fields with format requirements show guidance before the user submits
+- [ ] **Actionable errors / 실행 가능한 오류 메시지** — Every error message states what went wrong AND how to fix it
+- [ ] **Contextual help / 상황별 도움말** — Complex or technical fields have tooltips
+- [ ] **Onboarding / 온보딩** — Empty states and first-use screens give clear next-step guidance
 
-**Note in report:** "H4 (Consistency), H5 (Error Prevention), H8 (Aesthetics), H9 (Error Recovery) are covered by Cat 5, 7, 4, and 11/12 respectively — see those categories for full results."
+**Note in report:**
+- English: "H4 (Consistency), H5 (Error Prevention), H8 (Aesthetics), H9 (Error Recovery) are covered by Cat 5, 7, 4, and 11/12 respectively — see those categories for full results."
+- Korean: "H4(일관성), H5(오류 예방), H8(미적 디자인), H9(오류 복구)는 각각 Cat 5, 7, 4, 11/12에서 다룹니다."
 
 ---
 ## Step 3: Score & Report
@@ -1680,9 +1696,9 @@ audit, share the Figma file or component code.
 *(Only show if any ethics issues were found, or if the audit was full scope)*
 
 ### Usability Score: [X/100]  *(Category 19)*
-[Band label: Heuristically sound / minor gaps / significant issues / fundamental failures]
+[Band label: Heuristically sound / 사용성 기준 충족 · minor gaps / 사소한 문제 · significant issues / 심각한 문제 · fundamental failures / 근본적 실패]
 *(Only show if Cat 19 was audited)*
-*(Note: "H4, H5, H8, H9 covered by Cat 5, 7, 4, 11/12 — see those categories.")*
+*(Note EN: "H4, H5, H8, H9 covered by Cat 5, 7, 4, 11/12." KO: "H4, H5, H8, H9는 각각 Cat 5, 7, 4, 11/12에서 다룹니다.")*
 
 ### Score by Category
 | Category | Score | Issues |
@@ -1752,7 +1768,7 @@ New issues found: [N]
 #### REPORT FOOTER *(always)*
 ```
 ---
-*Audit run with Design Auditor Skill v1.2.8 · [input type] · [confidence level]*
+*Audit run with Design Auditor Skill v1.2.9 · [input type] · [confidence level]*
 *Re-audit after fixes to track progress. / 수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
 ```
 
@@ -1921,7 +1937,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ---
-*Generated by Design Auditor Skill v1.2.8*
+*Generated by Design Auditor Skill v1.2.9*
 ```
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
@@ -1949,7 +1965,7 @@ Content to include in the Canva doc:
   3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
   4. Top 3 critical issues with one-line fix each
   5. What's working well (2–3 positives)
-  6. Footer: "Generated by Design Auditor Skill v1.2.8"
+  6. Footer: "Generated by Design Auditor Skill v1.2.9"
 
 After generating:
   → Present the Canva design to the user
@@ -1966,7 +1982,7 @@ If Canva connector is unavailable:
 
 **Input type:** [Figma wireframe / Greyscale screenshot / Sketch]
 **Spec generated:** [date]
-**Fidelity:** Wireframe — values are recommended, not measured
+**Fidelity:** Wireframe — values are recommended, not measured / 와이어프레임 — 값은 권장사항이며 실측값이 아닙니다
 
 ---
 
@@ -2051,7 +2067,7 @@ Things the wireframe doesn't answer that must be decided before development:
 - [ ] [Question about loading state if this fetches data]
 
 ---
-*Generated by Design Auditor Skill v1.2.8 · Wireframe to Spec mode*
+*Generated by Design Auditor Skill v1.2.9 · Wireframe to Spec mode*
 *Values marked ~ are estimated. Confirm with designer before development.*
 ```
 
