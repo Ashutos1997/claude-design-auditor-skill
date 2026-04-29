@@ -4,6 +4,48 @@ This reference covers Category 19 of the Design Auditor skill.
 
 Nielsen's 10 Usability Heuristics are the most widely used framework for evaluating interface usability. They were developed by Jakob Nielsen and are grounded in decades of usability research.
 
+---
+
+## Korean Language Support / 한국어 지원
+
+When auditing in Korean, use the following terminology:
+
+| English | Korean |
+|---|---|
+| Usability heuristics | 사용성 휴리스틱 |
+| Visibility of system status | 시스템 상태 가시성 |
+| Match between system and real world | 시스템과 현실 세계의 일치 |
+| User control and freedom | 사용자 제어 및 자유 |
+| Recognition rather than recall | 기억보다 인식 |
+| Flexibility and efficiency of use | 사용의 유연성 및 효율성 |
+| Help and documentation | 도움말 및 문서 |
+| Loading state | 로딩 상태 |
+| Progress indicator | 진행 표시기 |
+| Confirmation dialog | 확인 대화상자 |
+| Destructive action | 파괴적 작업 |
+| Helper text | 도움말 텍스트 |
+| Tooltip | 툴팁 |
+| Onboarding | 온보딩 |
+| Bulk action | 일괄 작업 |
+| Keyboard shortcut | 키보드 단축키 |
+| Floating label | 플로팅 라벨 |
+| Error message | 오류 메시지 |
+| Dropdown | 드롭다운 |
+| Multi-step flow | 멀티스텝 플로우 |
+| Empty state | 빈 상태 |
+| Jargon | 전문 용어 / 업계 용어 |
+
+**Korean severity labels (same as main audit):**
+- 🚫 차단 (Blocker)
+- 🔴 심각 (Critical)
+- 🟡 경고 (Warning)
+- 🟢 팁 (Tip)
+
+**Korean heuristic note in reports:**
+> "H4(일관성), H5(오류 예방), H8(미적 디자인), H9(오류 복구)는 각각 카테고리 5, 7, 4, 11/12에서 다룹니다."
+
+---
+
 **Scope of this category:**
 4 heuristics are already fully covered by existing categories and are not re-audited here:
 - H4 (Consistency and Standards) → Cat 5
@@ -27,10 +69,10 @@ Start at 100. Apply standard deduction tiers from the main audit:
 **Floor is 0.**
 
 **Scoring bands:**
-- **90–100** → Heuristically sound
-- **70–89** → Minor usability gaps
-- **50–69** → Significant usability issues — likely frustrating real users
-- **< 50** → Fundamental usability failures — warrants user testing before shipping
+- **90–100** → Heuristically sound / 사용성 기준 충족
+- **70–89** → Minor usability gaps / 사소한 사용성 문제
+- **50–69** → Significant usability issues — likely frustrating real users / 심각한 사용성 문제
+- **< 50** → Fundamental usability failures — warrants user testing before shipping / 근본적인 사용성 실패
 
 Display as: **Usability Score: X/100**
 
@@ -654,35 +696,35 @@ Correct patterns:
 
 ---
 
-## Quick Reference Checklist
+## Quick Reference Checklist / 빠른 참조 체크리스트
 
-**H1 — Visibility of System Status (gaps)**
-- [ ] Buttons that trigger async actions have loading states
-- [ ] Form submissions confirm success with toast or confirmation screen
-- [ ] Multi-step flows (3+ steps) have a visible progress indicator
+**H1 — Visibility of System Status / 시스템 상태 가시성 (gaps)**
+- [ ] Buttons that trigger async actions have loading states / 비동기 작업 버튼에 로딩 상태 있음
+- [ ] Form submissions confirm success / 폼 제출 시 성공 확인 메시지 표시
+- [ ] Multi-step flows (3+) have a visible progress indicator / 멀티스텝 플로우에 진행 표시기 있음
 
-**H2 — Match Between System and Real World**
-- [ ] No raw error codes, stack traces, or developer terms in UI copy
-- [ ] Icons match their conventional real-world meaning in this context
-- [ ] Date and number formats use locale-aware formatting
+**H2 — Match Between System and Real World / 시스템과 현실 세계의 일치**
+- [ ] No raw error codes or developer terms in UI / UI에 원시 오류 코드 또는 개발자 용어 없음
+- [ ] Icons match their conventional real-world meaning / 아이콘이 실제 의미와 일치
+- [ ] Date and number formats use locale-aware formatting / 날짜·숫자 형식에 로케일 적용
 
-**H3 — User Control and Freedom (gaps)**
-- [ ] All modals have a visible close mechanism and respond to Escape
-- [ ] Multi-step flows have a Back option on every step except the first
-- [ ] Destructive actions have confirmation dialogs or undo options
+**H3 — User Control and Freedom / 사용자 제어 및 자유 (gaps)**
+- [ ] All modals have a close mechanism and respond to Escape / 모든 모달에 닫기 기능 및 Escape 키 지원
+- [ ] Multi-step flows have a Back option on every step / 멀티스텝 플로우의 모든 단계에 뒤로 가기 옵션
+- [ ] Destructive actions have confirmation dialogs / 파괴적 작업에 확인 대화상자 있음
 
-**H6 — Recognition Rather Than Recall**
-- [ ] Primary navigation items have visible text labels alongside icons
-- [ ] Form labels remain visible during and after input (no disappearing labels)
-- [ ] Dropdown triggers show the currently selected value
+**H6 — Recognition Rather Than Recall / 기억보다 인식**
+- [ ] Primary navigation items have visible text labels / 기본 내비게이션에 텍스트 라벨 있음
+- [ ] Form labels remain visible during and after input / 폼 라벨이 입력 중·후에도 표시됨
+- [ ] Dropdown triggers show the currently selected value / 드롭다운 트리거에 현재 선택값 표시
 
-**H7 — Flexibility and Efficiency of Use**
-- [ ] Keyboard shortcut hints shown in tooltips for power user actions (where relevant)
-- [ ] Lists that support management operations have bulk selection
-- [ ] User preferences are persisted across sessions where relevant
+**H7 — Flexibility and Efficiency of Use / 사용의 유연성 및 효율성**
+- [ ] Keyboard shortcut hints shown where relevant / 관련 항목에 키보드 단축키 힌트 표시
+- [ ] Management lists have bulk selection where warranted / 관리 목록에 일괄 선택 지원
+- [ ] User preferences are persisted across sessions / 사용자 환경설정이 세션 간 유지됨
 
-**H10 — Help and Documentation**
-- [ ] Fields with specific format requirements show helper text before error
-- [ ] Error messages state what went wrong AND how to fix it
-- [ ] Complex or technical fields have contextual tooltips
-- [ ] First-use / empty states give clear next-step guidance
+**H10 — Help and Documentation / 도움말 및 문서**
+- [ ] Fields with format requirements show helper text / 형식 요건이 있는 필드에 도움말 텍스트 있음
+- [ ] Error messages state what went wrong AND how to fix it / 오류 메시지에 문제점과 해결 방법 모두 포함
+- [ ] Complex or technical fields have contextual tooltips / 복잡한 필드에 상황별 툴팁 있음
+- [ ] Empty states and first-use screens give clear next-step guidance / 빈 상태와 첫 사용 화면에 다음 단계 안내 있음
