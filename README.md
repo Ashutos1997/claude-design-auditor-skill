@@ -164,7 +164,19 @@ design-auditor/
 
 ### v1.2.8
 
-Coming Soon.
+**Heuristics.md coverage — no loose ends.**
+
+- Scope declaration (H4/H5/H8/H9 explicitly excluded with reasons)
+- Usability Score model with bands
+- H1 gaps — async button loading state, form success confirmation, multi-step progress indicator
+- H2 — jargon/error code detection, icon meaning mismatch, locale-aware date/number formats
+- H3 gaps — modal close mechanism, flow back navigation, destructive action confirmation
+- H6 — icon-only nav, disappearing floating labels, dropdown selection visibility
+- H7 — keyboard shortcut hints, bulk action support, preference persistence
+- H10 — helper text on complex fields, actionable error messages, contextual tooltips, onboarding guidance
+- Quick reference checklist covering all 6 heuristics
+
+Every entry has: definition, why it matters, Figma detection, code detection, severity, fix, and context note.
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
