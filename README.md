@@ -1,6 +1,6 @@
 # 🎨 Design Auditor — Claude Skill
 
-A Claude skill that audits designs against **18 professional design categories** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
+A Claude skill that audits designs against **19 professional design categories** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
 
 Works with **Figma files** (via Figma MCP), **code** (HTML/CSS/React/Vue), **screenshots**, **wireframes**, and written descriptions. Supports **English and Korean**.
 
@@ -10,11 +10,11 @@ Compatible with **Claude**, **Manus**, and other agents that support SKILL.md-ba
 
 ## What It Does
 
-Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe — Design Auditor checks your work against 18 categories of design rules and gives you:
+Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe — Design Auditor checks your work against 19 categories of design rules and gives you:
 
 - A **score out of 100** with per-category breakdown
 - A separate **Accessibility Score** (WCAG coverage across Cat 2, 6, 7, 16)
-- A separate **Ethics Score** (dark patterns and manipulative design across Cat 18)
+- A separate **Ethics Score** (dark patterns and manipulative design across Cat 19)
 - A **🚫 Blocker tier** for legal/compliance violations (WCAG AA, GDPR, PECR) — separate from Critical issues
 - Issues ranked by severity (🚫 Blocker / 🔴 Critical / 🟡 Warning / 🟢 Tip)
 - **Plain-language explanations** of *why* each rule matters
@@ -50,7 +50,7 @@ Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe 
 | 15 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
 | 16 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
 | 17 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
-| 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, and 15 more manipulative patterns across 5 groups |
+| 19 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, and 15 more manipulative patterns across 5 groups |
 | 19 | **Nielsen's 10 Usability Heuristics Rules** | Nielsen's 10 Usability Heuristics are the most widely used framework for evaluating interface usability. They were developed by Jakob Nielsen and are grounded in decades of usability research |
 
 ---
@@ -139,7 +139,7 @@ A legal compliance failure and contrast issues are the main drag.
 
 ```
 design-auditor/
-├── SKILL.md                        — Main skill instructions (18 categories)
+├── SKILL.md                        — Main skill instructions (19 categories)
 └── references/
     ├── typography.md               — Font rules, sizing, hierarchy, type scale algorithm
     ├── color.md                    — WCAG luminance formula, contrast, palette guidance
@@ -154,7 +154,7 @@ design-auditor/
     ├── states.md                   — Loading, empty, error, success states + code checks
     ├── microcopy.md                — Button labels, errors, tone, per-role audit guide
     ├── animation.md                — Easing curves, duration scales, reduced motion, code checks
-    ├── i18n.md                     — RTL support, locale formatting, i18n
+    ├── i19n.md                     — RTL support, locale formatting, i19n
     └── ethics.md                   — Dark patterns, ethical design, persuasion vs manipulation
 ```
 
@@ -255,7 +255,7 @@ Accessibility Score updated: Blockers use −12. Any Blocker appends "⚠️ Con
 
 ### v1.2.4
 
-**New: Category 18 — Ethical Design & Dark Patterns**
+**New: Category 19 — Ethical Design & Dark Patterns**
 
 20 manipulative patterns across 5 groups: Deceptive Interface, Coercive Flows, Consent & Privacy, False Urgency & Scarcity, Emotional Manipulation.
 
