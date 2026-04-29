@@ -1,7 +1,7 @@
 ---
 name: design-auditor
-version: 1.2.7
-description: "Audit designs against 18 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns and ethical design issues, outputs before/after code diffs, generates developer handoff reports, and converts wireframes into annotated dev-ready specs. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, review this component, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, review my checkout, is this manipulative, is my UI accessible, check my design system, is this ethical, is my form accessible, is my dark mode correct, is this responsive, review my empty states, wireframe to spec, annotate my wireframe, turn this wireframe into a spec, spec out this design."
+version: 1.2.8
+description: "Audit designs against 19 professional rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Detects framework automatically, runs code superpowers (aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing), audits for dark patterns, ethical design, and Nielsen's usability heuristics. Outputs before/after code diffs, generates developer handoff reports, and converts wireframes into annotated dev-ready specs. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, typography check, color contrast, WCAG, a11y, pixel perfect, UI critique, Figma audit, CSS check, does this look good, dark patterns, ethical design, is this GDPR compliant, check my onboarding, is this manipulative, is my UI accessible, is this ethical, is my form accessible, is my dark mode correct, is this responsive, wireframe to spec, annotate my wireframe, heuristic review, Nielsen audit, usability heuristics."
 ---
 
 # Design Checker Skill
@@ -1493,6 +1493,55 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 **Before flagging any pattern:** Check the Ethical Persuasion reference in `references/ethics.md`. Do not flag legitimate persuasion techniques (genuine social proof, real urgency, positive progress framing, transparent anchoring).
 
 ---
+
+### CATEGORY 19: Nielsen's Usability Heuristics
+*Full rules, all heuristic definitions, detection signals, and the Usability Score → `references/heuristics.md`*
+
+**Scope:** Audits the 6 heuristics with genuine gaps not covered by existing categories. H4, H5, H8, H9 are already covered by Cat 5, 7, 4, 11/12 respectively — note this in the report but do not re-audit them here.
+
+**When to run:**
+- Always on Full audits
+- Skip on Quick audits unless user specifically requests heuristic review
+- Triggers on: "heuristic review", "Nielsen audit", "usability heuristics", "H1/H2/H6..." etc.
+
+**Usability Score** is separate from the Overall Score and the Accessibility Score. Start at 100, apply standard deduction tiers. Display as: **Usability Score: X/100**
+
+**Checklist:**
+
+*H1 — Visibility of System Status (gaps only)*
+- [ ] **Async button feedback** — Every button triggering an async action has a loading/disabled state during processing
+- [ ] **Form submit confirmation** — Every form submission confirms success with a toast or confirmation screen
+- [ ] **Multi-step progress** — Flows with 3+ steps have a visible progress indicator
+
+*H2 — Match Between System and Real World*
+- [ ] **No jargon in UI** — No raw error codes, stack traces, or developer terms in user-facing copy
+- [ ] **Icon meaning** — Icons match their conventional real-world meaning in context
+- [ ] **Locale-aware formats** — Dates and numbers use `Intl` formatting, not hardcoded patterns
+
+*H3 — User Control and Freedom (gaps only)*
+- [ ] **Modal exit** — All modals have a visible close mechanism and respond to Escape key
+- [ ] **Flow back navigation** — Multi-step flows have a Back option on every step except the first
+- [ ] **Destructive confirmation** — Permanent destructive actions have confirmation dialogs naming what's being deleted
+
+*H6 — Recognition Rather Than Recall*
+- [ ] **Nav labels** — Primary navigation items have visible text labels alongside icons
+- [ ] **Persistent labels** — Form labels remain visible during and after input
+- [ ] **Selection visibility** — Dropdown triggers show the currently selected value; selected options are visually distinct
+
+*H7 — Flexibility and Efficiency of Use*
+- [ ] **Keyboard shortcuts** — Power user shortcuts are hinted in tooltips on frequently-used actions (productivity tools)
+- [ ] **Bulk actions** — Management-oriented lists support bulk selection where clearly warranted
+- [ ] **Preference persistence** — User preferences are saved across sessions where relevant
+
+*H10 — Help and Documentation*
+- [ ] **Helper text** — Fields with format requirements show guidance before the user submits
+- [ ] **Actionable errors** — Every error message states what went wrong AND how to fix it
+- [ ] **Contextual help** — Complex or technical fields have tooltips
+- [ ] **Onboarding** — Empty states and first-use screens give clear next-step guidance
+
+**Note in report:** "H4 (Consistency), H5 (Error Prevention), H8 (Aesthetics), H9 (Error Recovery) are covered by Cat 5, 7, 4, and 11/12 respectively — see those categories for full results."
+
+---
 ## Step 3: Score & Report
 
 ### Scoring Formula
@@ -1630,6 +1679,11 @@ audit, share the Figma file or component code.
 [Band label: Ethically sound / minor concerns / significant manipulation risk / deliberately deceptive]
 *(Only show if any ethics issues were found, or if the audit was full scope)*
 
+### Usability Score: [X/100]  *(Category 19)*
+[Band label: Heuristically sound / minor gaps / significant issues / fundamental failures]
+*(Only show if Cat 19 was audited)*
+*(Note: "H4, H5, H8, H9 covered by Cat 5, 7, 4, 11/12 — see those categories.")*
+
 ### Score by Category
 | Category | Score | Issues |
 |---|---|---|
@@ -1698,7 +1752,7 @@ New issues found: [N]
 #### REPORT FOOTER *(always)*
 ```
 ---
-*Audit run with Design Auditor Skill v1.2.7 · [input type] · [confidence level]*
+*Audit run with Design Auditor Skill v1.2.8 · [input type] · [confidence level]*
 *Re-audit after fixes to track progress. / 수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
 ```
 
@@ -1867,7 +1921,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ---
-*Generated by Design Auditor Skill v1.2.7*
+*Generated by Design Auditor Skill v1.2.8*
 ```
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
@@ -1895,7 +1949,7 @@ Content to include in the Canva doc:
   3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
   4. Top 3 critical issues with one-line fix each
   5. What's working well (2–3 positives)
-  6. Footer: "Generated by Design Auditor Skill v1.2.7"
+  6. Footer: "Generated by Design Auditor Skill v1.2.8"
 
 After generating:
   → Present the Canva design to the user
@@ -1997,7 +2051,7 @@ Things the wireframe doesn't answer that must be decided before development:
 - [ ] [Question about loading state if this fetches data]
 
 ---
-*Generated by Design Auditor Skill v1.2.7 · Wireframe to Spec mode*
+*Generated by Design Auditor Skill v1.2.8 · Wireframe to Spec mode*
 *Values marked ~ are estimated. Confirm with designer before development.*
 ```
 
@@ -2060,3 +2114,4 @@ color: #666;          /* 4.5:1 contrast on white */
 - `references/navigation.md` — Tabs, breadcrumbs, back buttons, mobile nav, active states
 - `references/animation.md` — Easing curves, duration scales, reduced motion, Figma Smart Animate naming, code animation checks
 - `references/ethics.md` — Ethical design & dark patterns: full taxonomy (20 patterns across 5 groups), detection signals, ethics severity model, ethics score, ethical persuasion reference
+- `references/heuristics.md` — Nielsen's 10 Usability Heuristics: H1/H2/H3/H6/H7/H10 gap coverage, detection signals, Usability Score, quick reference checklist
