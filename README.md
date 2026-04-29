@@ -162,6 +162,31 @@ design-auditor/
 
 ## Changelog
 
+### v1.2.9
+
+**Korean language coverage — full audit pass**
+
+Audited all changes made since v1.2.4 for missing Korean support and filled every gap found.
+
+**SKILL.md gaps fixed:**
+
+- **Category 19 checklist** — All 19 heuristic checklist items now have bilingual labels (e.g. "Async button feedback / 비동기 버튼 피드백")
+- **Category 19 triggers** — Korean trigger phrases added: "휴리스틱 검토", "닐슨 감사", "사용성 휴리스틱", "H1/H2/H6 확인"
+- **Usability Score bands** — All four bands now bilingual: "Heuristically sound / 사용성 기준 충족", "Minor gaps / 사소한 사용성 문제", etc.
+- **Usability Score note in report** — Korean version: "H4(일관성), H5(오류 예방), H8(미적 디자인), H9(오류 복구)는 각각 Cat 5, 7, 4, 11/12에서 다룹니다."
+- **URL report header** — Korean format added for all URL-type audits (라이브 URL, 신뢰도, 제한사항)
+- **Wireframe spec fidelity line** — Korean added: "값은 권장사항이며 실측값이 아닙니다"
+
+**`heuristics.md` Korean support added:**
+
+- **Korean terminology table** — 22 key UX terms with Korean equivalents (사용성 휴리스틱, 로딩 상태, 진행 표시기, 온보딩, 일괄 작업, etc.)
+- **Korean severity labels** — 🚫 차단 · 🔴 심각 · 🟡 경고 · 🟢 팁
+- **Korean heuristic note** — Standard report note translated
+- **Usability Score bands** — All four bands bilingual in the ref file
+- **Quick Reference Checklist** — All 19 checklist items translated (e.g. "비동기 작업 버튼에 로딩 상태 있음", "파괴적 작업에 확인 대화상자 있음")
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 ### v1.2.8
 
 **Heuristics.md coverage — no loose ends.**
