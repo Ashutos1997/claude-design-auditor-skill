@@ -29,7 +29,7 @@ Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe 
 
 ---
 
-## The 18 Audit Categories
+## The 19 Audit Categories
 
 | # | Category | What It Checks |
 |---|---|---|
@@ -51,6 +51,7 @@ Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe 
 | 16 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
 | 17 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
 | 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, and 15 more manipulative patterns across 5 groups |
+| 19 | **Nielsen's 10 Usability Heuristics Rules** | Nielsen's 10 Usability Heuristics are the most widely used framework for evaluating interface usability. They were developed by Jakob Nielsen and are grounded in decades of usability research |
 
 ---
 
@@ -149,6 +150,7 @@ design-auditor/
     ├── navigation.md               — Tabs, breadcrumbs, back buttons, mobile nav, code checks
     ├── tokens.md                   — Design tokens, semantic naming, dark mode architecture
     ├── figma-mcp.md                — Figma MCP workflow, Code Connect, page structure, safe editing
+    ├── heuristics.md               - Nielsen's 10 Usability Heuristics: H1/H2/H3/H6/H7/H10 gap coverage
     ├── states.md                   — Loading, empty, error, success states + code checks
     ├── microcopy.md                — Button labels, errors, tone, per-role audit guide
     ├── animation.md                — Easing curves, duration scales, reduced motion, code checks
