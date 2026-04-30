@@ -1,3 +1,5 @@
+[🇰🇷 한국어 버전 →](./README_KR.md)
+
 # 🎨 Design Auditor — Claude Skill
 
 A Claude skill that audits designs against **19 professional design categories** — built for developers, non-designers, and anyone who wants expert design validation without needing to know the rules themselves.
