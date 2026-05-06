@@ -51,14 +51,14 @@ Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe 
 | 8 | **Motion & Animation** | Purpose, duration, easing, reduced-motion support |
 | 9 | **Dark Mode** | Not just inverted, surface elevation, saturation, icon legibility |
 | 10 | **Responsive & Adaptive** | Breakpoints, overflow, touch targets, type scaling |
-| 11 | **Loading, Empty & Error States** | Skeletons, empty state anatomy, error levels, success confirmation |
+| 11 | **Loading, Empty & Error States** | Skeletons, empty state anatomy, error levels, success confirmation, Peak-End Rule, Goal Gradient progress checks |
 | 12 | **Content & Microcopy** | Button labels, error messages, tone consistency, terminology |
 | 13 | **Internationalization & RTL** | Text expansion, RTL mirroring, locale-aware formatting, font support |
 | 14 | **Elevation & Shadows** | Shadow scale, elevation hierarchy, dark mode depth |
 | 15 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
 | 16 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
 | 17 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
-| 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, and 15 more manipulative patterns across 5 groups |
+| 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, decoy pricing, manipulative anchoring, and 17 more manipulative patterns across 5 groups |
 | 19 | **Nielsen's 10 Usability Heuristics Rules** | Nielsen's 10 Usability Heuristics are the most widely used framework for evaluating interface usability. They were developed by Jakob Nielsen and are grounded in decades of usability research |
 
 ---
@@ -158,7 +158,7 @@ design-auditor/
     ├── navigation.md               — Tabs, breadcrumbs, back buttons, mobile nav, code checks
     ├── tokens.md                   — Design tokens, semantic naming, dark mode architecture
     ├── figma-mcp.md                — Figma MCP workflow, Code Connect, page structure, safe editing
-    ├── heuristics.md               - Nielsen's 10 Usability Heuristics: H1/H2/H3/H6/H7/H10 gap coverage
+    ├── heuristics.md               — Nielsen's 10 Usability Heuristics: H1/H2/H3/H6/H7/H10 gap coverage
     ├── states.md                   — Loading, empty, error, success states + code checks
     ├── microcopy.md                — Button labels, errors, tone, per-role audit guide
     ├── animation.md                — Easing curves, duration scales, reduced motion, code checks
@@ -170,22 +170,32 @@ design-auditor/
 
 ## Changelog
 
-### v1.2.11
+### v1.2.12
 
-**Code parity, design system detection, accessibility improvements, and bug fixes.**
+**Behavioural patterns from nudges.fyi, bug fixes, and visual report improvements.**
 
-- **Code superpowers** — added `📋 Code input:` blocks to Cat 4 (Visual Hierarchy), Cat 5 (Consistency), Cat 11 (States), Cat 12 (Microcopy), Cat 14 (Elevation), Cat 15 (Iconography) — completing all 19 categories
-- **Design System detection** — auto-detects MUI, Chakra UI, shadcn/ui, Ant Design, Radix, Bootstrap; system-specific issue types and fix paths
-- **Color blindness context** — every failing color pair annotated with affected blindness type (Deuteranopia, Protanopia, Tritanopia)
-- **SVG accessibility** — decorative `aria-hidden`, meaningful `role="img"` + `<title>`, icon-button label checks across Cat 6 and Cat 15
-- **Figma Auto Layout scan** — detects frames using manual positioning where Auto Layout should be used; shown in report header
-- **Accessibility Score** — expanded from Cat 2/6/7/16 to Cat 2/6/7/**15**/16 (Cat 15 SVG checks are WCAG legal violations)
-- **Nielsen cross-reference** — H4/H5/H8/H9 mapped in scores panel to Cat 5/7/4/11–12
-- **"Teach Me" mode** — explains design principles behind top 3 issues (beginner + expert depth, full Korean)
-- **Scoring formula** — Blockers now explicit in formula: `100 − (blockers × 12) − (criticals × 8) − (warnings × 4) − (tips × 1)`
-- **Dev Handoff Report** — added missing 🟢 Tips section; restructured with `━━━` dividers throughout
-- **Output** — mini bar column in Score by Category table; Design System + Auto Layout rows in report header; Cat 9 `color-scheme` meta tag check
-- **Bug fixes** — category count "17" → "19" throughout; Cat 18/19 numbering corrected; `i19n.md` typo → `i18n.md`; Korean README category count corrected
+**New: 5 behavioural pattern additions**
+- **Overchoice Paradox → Cat 4** — 4+ equal-weight sibling actions with no primary → 🟡; 6+ → 🔴. Exempt: lists, nav menus, data tables
+- **Peak-End Rule → Cat 11** — audits success/completion screens for memorability: named action, next step, positive visual signal, auto-redirect timing
+- **Goal Gradient Theory → Cat 11** — detects multi-step flows with no progress bar, static fill bars, missing step totals, and `aria-valuenow` gaps
+- **Decoy Pricing → Cat 18 Group A** — 3-column pricing with one tier strictly dominated on every axis
+- **Manipulative Anchoring → Cat 18 Group D** — `text-decoration: line-through` / `.was-price` / `.rrp` patterns near current price elements
+
+**Bug fixes**
+- Cat 18 pattern count updated: 20 → 22 (both READMEs)
+- Cat 6 SVG `<use>`: added `xlink:href` legacy check alongside `href`
+- Cat 19 H1 "Multi-step progress" cross-references new Cat 11 Goal Gradient checks to avoid double-flagging
+- Scores panel: Ethics Score formula caveat added — `🔴 −15 · 🟡 −7 · 🟢 0`, distinct from standard formula
+- `heuristics.md` separator in skill structure: `-` → `—`
+- README Cat 11 row updated to mention Peak-End Rule and Goal Gradient
+
+**Visual report improvements**
+- Radar chart: binary purple/red → three-colour scale — purple (8–10) · amber (6–7) · red (≤ 5)
+- Radar chart: fallback to Score by Category table when Visualizer unavailable (EN + KR)
+- Issue Priority Matrix: Korean axis labels added — `수정 난이도` (x) · `개선 효과` (y)
+- Score by Category table: score band footnote — `≥ 8 ✅ · 5–7 🟡 · ≤ 4 🔴` (EN + KR)
+- Re-audit delta: before/after bar pair rendered via Visualizer with colour-coded delta badge
+- Teach Me mode: 3-card Visualizer layout after lessons, each card clickable via `sendPrompt()`
 
 ------------------------------------------------------------------------------------------------------------------------------------------
 

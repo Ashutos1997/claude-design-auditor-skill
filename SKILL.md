@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.11
+version: 1.2.12
 description: "Audit designs against 19 rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Auto-detects framework and design system (MUI, Chakra, shadcn/ui, Ant Design, Radix, Bootstrap). Runs code superpowers across all 19 categories: aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing, states, microcopy, elevation, iconography/SVG. Flags color blindness risk. Audits dark patterns, ethical design, Nielsen's heuristics. Outputs before/after diffs, developer handoff reports, wireframe-to-spec. English and Korean. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, color contrast, WCAG, a11y, pixel perfect, Figma audit, CSS check, dark patterns, is this GDPR compliant, is this manipulative, is my form accessible, is my dark mode correct, wireframe to spec, heuristic review, Nielsen audit, usability heuristics, 디자인 검토, 접근성 확인, 색상 대비, 다크 패턴, 와이어프레임 스펙."
 ---
 
@@ -1106,6 +1106,19 @@ Element weight ratios:
   → Primary CTA font-weight ≤ body font-weight → 🟡 Warning (CTA doesn't feel more important)
   → Primary CTA font-size = body font-size with no weight or color differentiation → 🟡
 
+Overchoice check:
+  → Collect all interactive sibling elements (buttons, links, cards) within the same container
+  → If 4+ siblings share identical: font-size, font-weight, and background-color (or all lack background)
+    AND none is visually differentiated as primary → 🟡 Warning
+    "4+ equal-weight options with no primary action — users experience decision paralysis.
+     Establish one clear primary action per section."
+  → If 6+ sibling options share identical visual treatment → 🔴 Critical
+    (Overchoice Paradox: too many undifferentiated choices measurably reduce decision quality and
+     completion rates. Demote, group, or hide lower-priority options.)
+  → Exception: lists (ul/ol), nav menus, and data tables are exempt — overchoice applies to
+    action-oriented UI (CTAs, product cards, feature choices), not content lists.
+  → Korean: "4개 이상 동일한 시각적 비중의 선택지 — 결정 마비 위험. 주요 액션을 명확히 구분하세요."
+
 Only run this category if:
   → Font-size data was successfully extracted (Cat 1 extraction already done)
   Otherwise: note "Visual hierarchy inferred from screenshot — see Cat 1 for typography data"
@@ -1240,7 +1253,7 @@ When auditing HTML/React/Vue code, check directly:
       Correct: <svg role="img" aria-labelledby="icon-title"><title id="icon-title">Company logo</title>...</svg>
     → <svg> with focusable="true" (IE default) in an icon-only button → 🟡 Warning
       (creates double tab stop — icon receives focus separately from its button wrapper)
-    → <use href="..."> referencing a <symbol> — check the <symbol> has a <title> → 🟡
+    → <use href="..."> or <use xlink:href="..."> referencing a <symbol> — check the <symbol> has a <title> → 🟡
 ```
 
 ---
@@ -1491,6 +1504,47 @@ Success state detection:
 
 Korean report labels for this category:
   → 로딩 상태 누락 / 빈 상태 누락 / 오류 상태 누락 / 비활성화 상태 스타일 없음 / 성공 피드백 없음
+
+Peak-End Rule:
+  Users judge entire flows by two moments: the emotional peak and the final screen.
+  This makes success/completion states disproportionately important — they are the "end."
+
+  → Check all success/completion screens (form submitted, purchase complete, onboarding done,
+    file uploaded, account created):
+    → Success screen displays only a generic "Done" or "Success" with no detail → 🟡 Warning
+      "The last screen of a flow shapes the user's memory of the whole experience.
+       Add: what was completed, what happens next, and a positive reinforcement signal."
+    → Success screen auto-redirects in < 2000ms before user can read it → 🟡 Warning
+    → Success screen has no positive visual signal (color, icon, illustration, animation) → 🟡
+    → Well-formed success screen: names the completed action + next step + positive visual → ✅
+
+  → Check the "peak" moment — the primary CTA interaction (submit, purchase, confirm):
+    → Button shows no pressed/active state during interaction → 🟡 (no tactile feedback)
+    → No loading state between tap and result → 🟡 (also caught by Cat 11 loading check)
+
+  Korean: 피크-엔드 법칙 — 완료 화면 미흡 / 성공 화면 즉시 리다이렉트 / 시각적 강화 요소 없음
+
+Goal Gradient Theory:
+  People increase effort and motivation as they get closer to completing a goal.
+  Progress indicators that don't communicate proximity to completion miss this effect.
+
+  → Scan for multi-step flows (checkout, onboarding, forms, wizards):
+    → 3+ step flow with no visible step counter or progress bar → 🟡 Warning
+      "No progress signal — users don't know how close they are to done, reducing completion rates."
+    → Progress bar present but always shows the same fill regardless of step → 🔴 Critical
+      (static progress bar is misleading — users expect it to advance)
+    → Step counter says "Step 3" without a total (e.g. "of 5") → 🟡 Warning
+      "Without knowing the total, users can't judge proximity to completion."
+    → Step counter shows "Step 3 of 4" — total visible → ✅
+    → Progress bar fill increases proportionally per step → ✅
+    → Final step visually signals it's the last step (e.g. "Last step", filled bar, changed CTA label) → ✅ strong signal
+
+  → Code checks:
+    → Stepper component without aria-valuenow / aria-valuemax → 🟡 (also Cat 6)
+    → Progress bar with static width value (width: 50% hardcoded, not dynamic) → 🔴
+    → Step counter rendered as plain text with no semantic role (role="status" or aria-live) → 🟡
+
+  Korean: 목표 경사 이론 — 진행 표시 없음 / 정적 진행 바 / 전체 단계 수 미표시
 ```
 
 ---
@@ -1842,6 +1896,7 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 - [ ] **Bait and switch** — CTA labels accurately describe the immediate next action
 - [ ] **Hidden costs** — All mandatory fees are shown from the first price display
 - [ ] **Visual misdirection** — Cost, commitment, and risk information meets the same visual standards as the CTA it accompanies
+- [ ] **Decoy pricing** — In multi-tier pricing layouts (3+ columns), no tier should be a deliberately inferior option designed only to make another tier look better. Signal: a middle or lower tier that is strictly dominated on every axis (price, features, limits) with no clear use case. Confidence: Medium — flag when detected with caveat. Korean: 디코이 가격 책정 — 의도적으로 열등한 옵션으로 중간 등급을 유도하는 패턴
 
 *Group B: Coercive Flows*
 - [ ] **Roach motel** — Cancellation/exit path is no harder than the sign-up/entry path
@@ -1859,6 +1914,7 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 - [ ] **Countdown timers** — Any timer is backed by a real server-side expiry that does not reset
 - [ ] **False scarcity** — Scarcity claims ("Only X left") are backed by real-time inventory data
 - [ ] **False social proof** — Social proof numbers ("X people viewing") reflect real data, not hardcoded or random values
+- [ ] **Manipulative anchoring** — Crossed-out "original" prices, inflated RRP values, or "was/now" displays must reflect a price the product was genuinely sold at. A strikethrough price that was never a real selling price is deceptive anchoring. Code signal: `text-decoration: line-through` or `.original-price` / `.was-price` / `.rrp` adjacent to a current price element. Confidence: Medium — flag for review. Korean: 조작적 앵커링 — 실제로 판매된 적 없는 취소선 가격 또는 부풀린 정가 표시
 
 *Group E: Emotional Manipulation*
 - [ ] **Guilt-based copy** — Inactivity, cancellation, and decline states are addressed neutrally, not shamefully
@@ -1893,7 +1949,7 @@ Scoring bands:
 *H1 — Visibility of System Status (gaps only) / 시스템 상태 가시성*
 - [ ] **Async button feedback / 비동기 버튼 피드백** — Every button triggering an async action has a loading/disabled state during processing
 - [ ] **Form submit confirmation / 폼 제출 확인** — Every form submission confirms success with a toast or confirmation screen
-- [ ] **Multi-step progress / 멀티스텝 진행 표시** — Flows with 3+ steps have a visible progress indicator
+- [ ] **Multi-step progress / 멀티스텝 진행 표시** — Flows with 3+ steps have a visible progress indicator *(detailed progress bar checks → Cat 11 Goal Gradient Theory)*
 
 *H2 — Match Between System and Real World / 시스템과 현실 세계의 일치*
 - [ ] **No jargon in UI / UI 내 전문 용어 없음** — No raw error codes, stack traces, or developer terms in user-facing copy
@@ -2071,6 +2127,7 @@ Usability     [████████████░░░░░░░░]  [X
               ↳ H4 Consistency → Cat 5 · H5 Error Prevention → Cat 7 · H8 Aesthetics → Cat 4 · H9 Recovery → Cat 11/12
 
 Score formula: 100 − ([N] × 🚫 12) − ([N] × 🔴 8) − ([N] × 🟡 4) − ([N] × 🟢 1) = [X]/100
+⚠️ Ethics Score uses its own formula: 🔴 −15 (Deceptive) · 🟡 −7 (Questionable) · 🟢 0 (Noted) — do not apply the standard formula to Ethics.
 
 [One sentence — what dragged the score down most.]
 ```
@@ -2093,6 +2150,7 @@ Score formula: 100 − ([N] × 🚫 12) − ([N] × 🔴 8) − ([N] × 🟡 4) 
 
 *(Bar is 10 chars wide. Fill = score value. █ filled, ░ empty. Score ≤ 5 → render bar in red context.)*
 *(Only include audited categories. Use — for unchecked severity levels.)*
+*(Score bands: ≥ 8 → ✅ good · 5–7 → 🟡 needs work · ≤ 4 → 🔴 critical · Korean: ≥ 8 → ✅ 양호 · 5–7 → 🟡 개선 필요 · ≤ 4 → 🔴 심각)*
 ```
 
 ---
@@ -2177,13 +2235,26 @@ Open:     🔴 [N] critical issues remaining
 New:      [N] new issues found
 ```
 
+**After the delta text block, render a Visualizer widget showing a before/after score bar pair:**
+```
+Two horizontal bars, stacked:
+  Previous:  ████████████░░░░░░░░  [prev]/100
+  Current:   ███████████████░░░░░  [current]/100  [+N ↑ in green / −N ↓ in red]
+
+Bar width: 20 chars. Colour: previous bar in muted gray (#888), current bar in #534AB7 (improved)
+or #E24B4A (regressed). Delta badge right-aligned.
+```
+- English intro: *"Here's how your score moved since the last audit."*
+- Korean intro: *"지난 감사 이후 점수 변화를 확인해 보세요."*
+- If score is unchanged: show both bars at same fill, no delta badge, note "No change in overall score."
+
 ---
 
 #### REPORT FOOTER *(always)*
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*Audit run with Design Auditor Skill v1.2.11 · [input type] · [confidence level]*
+*Audit run with Design Auditor Skill v1.2.12 · [input type] · [confidence level]*
 *Re-audit after fixes to track progress.*
 *수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2203,7 +2274,7 @@ Effort (1–10): 1–2 = single value change · 3–4 = one component rework · 
 
 Impact (1–10): 9–10 = breaks a11y or core usability · 6–8 = degrades experience · 3–5 = polish-level · 1–2 = cosmetic
 
-Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Introduce with one sentence in the user's detected language:
+Use deterministic positioning (no random jitter). Render severity as both color AND a letter inside the dot (C/W/T) for colorblind accessibility. Axis labels: English: "Effort to Fix" (x) / "Impact on Design" (y) · Korean: "수정 난이도" (x) / "개선 효과" (y) — use the user's detected language. Introduce with one sentence in the user's detected language:
 - English: *"Here's every issue mapped by how hard it is to fix versus how much it will improve the design — start in the top-left."*
 - Korean: *"발견된 모든 문제를 수정 난이도와 개선 효과 기준으로 매핑했습니다 — 왼쪽 위부터 시작하세요."*
 
@@ -2215,8 +2286,8 @@ Immediately after presenting the markdown report, use the Visualizer tool to ren
 - Extract the per-category scores (X/10) from the audit you just ran
 - Use only the categories that were actually audited (skip ones marked as not applicable)
 - Pass real scores — do not use placeholder data
-- Use exactly two colors: `#534AB7` (purple) for the filled shape and dots, `#E24B4A` (red) for scores ≤ 5 only
-- Label low-scoring categories (≤5) in red bold, all others in muted gray
+- Use three colours based on score band: `#534AB7` (purple) for scores 8–10, `#E8A838` (amber) for scores 6–7, `#E24B4A` (red) for scores ≤ 5 — applied to both the filled shape segments and the dots
+- Label categories scoring ≤ 5 in red bold, 6–7 in amber, 8–10 in muted gray
 - Each segment and label must be clickable via `sendPrompt()` to drill into that category
 - Show a compact score-bar legend below the chart listing all audited categories
 - Display the overall score in the centre of the radar
@@ -2230,6 +2301,11 @@ Store the current overall score in a JS variable accessible to the widget. If a 
 **Tone:** Introduce the chart with one short sentence in the user's detected language before the Visualizer call:
 - English: *"Here's a visual breakdown of how your design scores across each category — red spots are your highest-priority fixes."*
 - Korean: *"각 카테고리별 디자인 점수를 시각적으로 확인해 보세요 — 빨간 영역이 가장 우선적으로 수정해야 할 부분입니다."*
+
+**Fallback (if Visualizer is unavailable or rendering fails):**
+Do not skip the visual entirely. Fall back to the Score by Category table from the Strict Output Template — it carries the same per-category data in tabular form. Add a note:
+- English: *"(Radar chart unavailable in this context — see Score by Category table above.)"*
+- Korean: *"(이 환경에서는 레이더 차트를 표시할 수 없습니다 — 위의 카테고리별 점수 표를 참고하세요.)"*
 
 ---
 
@@ -2293,7 +2369,7 @@ Never batch-apply all fixes at once without per-issue confirmation.
 
 **If "Fix a specific issue"** → present a widget listing all 🔴 and 🟡 issues by name, let the user pick one, then show the before/after diff and apply the fix.
 
-**If "Teach me the rules behind my top issues"** → pick the 3 highest-severity issues from the audit and deliver a focused design principle lesson for each. Format:
+**If "Teach me the rules behind my top issues"** → pick the 3 highest-severity unique issue types from the audit and deliver a focused design principle lesson for each. Format:
 
 ```
 For each of the top 3 issues (🚫 first, then 🔴, then 🟡):
@@ -2311,7 +2387,21 @@ For each of the top 3 issues (🚫 first, then 🔴, then 🟡):
 - If beginner mode is active: no jargon, maximum one technical term per lesson with an inline definition
 - If experienced mode: go deeper, cite the cognitive science or perceptual research behind the rule
 - Korean: deliver the full lesson in Korean if the user's language is Korean
-- After the 3 lessons: *"Apply any of these fixes? I can edit the code or Figma directly."*
+
+**After all 3 lessons, render a Visualizer card widget — one card per lesson:**
+```
+Layout: 3 horizontal cards (or stacked on mobile)
+Each card:
+  Header:  [emoji] Lesson [N] · [Rule name]  — background #534AB7 (purple), white text
+  Body:    The rule (one line, bold) + Why it exists (one line, muted)
+  Footer:  "Learn more: [reference]" — small, linked if possible
+
+Card border: 1px solid #E8E8E8 · radius: 8px · padding: 16px
+```
+- English intro: *"Here are the 3 design principles behind your top issues — tap any card to drill in."*
+- Korean intro: *"상위 3개 이슈의 디자인 원칙을 카드로 정리했습니다 — 카드를 탭해 더 자세히 알아보세요."*
+- Each card header should be clickable via `sendPrompt()` to trigger "Explain [Rule name] in more detail"
+- After the widget: *"Apply any of these fixes? I can edit the code or Figma directly."*
   Korean: *"수정을 도와드릴까요? 코드나 Figma에서 직접 변경할 수 있습니다."*
 
 **If "Explain an issue"** → present a widget listing all issues found. When one is selected:
@@ -2421,8 +2511,8 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*Generated by Design Auditor Skill v1.2.11*
-*Design Auditor Skill v1.2.11 생성*
+*Generated by Design Auditor Skill v1.2.12*
+*Design Auditor Skill v1.2.12 생성*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -2439,7 +2529,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
   - `🟢 팁 — 마감 수준, 선택 사항` · *(팁 없으면 섹션 생략)*
   - `✅ 이미 올바른 항목`
 - Table column headers: `이슈` · `위치` · `수정 방법` · `법적 근거` · `정확한 값` · `속성` · `현재값` · `올바른 값` · `토큰` · `Figma 컴포넌트` · `코드 컴포넌트` · `상태`
-- Footer: `*Design Auditor Skill v1.2.11 생성*`
+- Footer: `*Design Auditor Skill v1.2.12 생성*`
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
 - The full audit report in the Strict Output Template format
@@ -2466,7 +2556,7 @@ Content to include in the Canva doc:
   3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
   4. Top 3 critical issues with one-line fix each
   5. What's working well (2–3 positives)
-  6. Footer: "Generated by Design Auditor Skill v1.2.11"
+  6. Footer: "Generated by Design Auditor Skill v1.2.12"
 
 After generating:
   → Present the Canva design to the user
@@ -2570,8 +2660,8 @@ If Canva connector is unavailable:
 - [ ] [Question about loading state if this fetches data]
 
 ---
-*Generated by Design Auditor Skill v1.2.11 · Wireframe to Spec mode*
-*디자인 스펙 문서 · Design Auditor Skill v1.2.11 생성*
+*Generated by Design Auditor Skill v1.2.12 · Wireframe to Spec mode*
+*디자인 스펙 문서 · Design Auditor Skill v1.2.12 생성*
 *Values marked ~ are estimated. Confirm with designer before development.*
 *~ 표시 값은 추정치입니다. 개발 전 디자이너에게 확인하세요.*
 ```
