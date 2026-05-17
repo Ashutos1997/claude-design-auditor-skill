@@ -1,6 +1,6 @@
 ---
 name: design-auditor
-version: 1.2.12
+version: 1.2.13
 description: "Audit designs against 19 rules across Figma files and code (HTML/CSS/React/Vue/Tailwind). Auto-detects framework and design system (MUI, Chakra, shadcn/ui, Ant Design, Radix, Bootstrap). Runs code superpowers across all 19 categories: aria, focus, contrast, tokens, responsive, motion, forms, navigation, spacing, states, microcopy, elevation, iconography/SVG. Flags color blindness risk. Audits dark patterns, ethical design, Nielsen's heuristics. Outputs before/after diffs, developer handoff reports, wireframe-to-spec. English and Korean. Triggers on: check my design, review my UI, audit my layout, is this accessible, design review, color contrast, WCAG, a11y, pixel perfect, Figma audit, CSS check, dark patterns, is this GDPR compliant, is this manipulative, is my form accessible, is my dark mode correct, wireframe to spec, heuristic review, Nielsen audit, usability heuristics, 디자인 검토, 접근성 확인, 색상 대비, 다크 패턴, 와이어프레임 스펙."
 ---
 
@@ -1921,6 +1921,34 @@ Display as: **Ethics Score: X/100** alongside Accessibility Score.
 - [ ] **Fear appeals** — Risk language is proportionate to actual risk; no exaggerated consequences for conversion
 - [ ] **Toying with emotion** — No patterns that deliberately engineer anxiety, FOMO, or regret as conversion mechanisms
 
+*Group F: Regulatory Compliance Baseline*
+These checks apply across most jurisdictions (EU, US, UK, Canada, Brazil, Australia). They are UI-detectable signals — not a legal audit. Flag as 🚫 Blocker when a legal requirement is clearly absent; 🟡 Warning when the implementation is ambiguous or weak. Always append: *"Verify with legal counsel for your specific jurisdiction and industry."*
+Korean caveat: *"이 항목은 법률 감사가 아닌 UI 신호 감사입니다. 관할 지역 및 산업별 요건은 법률 전문가와 확인하세요."*
+
+- [ ] **Cookie & consent banner** — If cookies beyond strictly necessary are used, a consent banner must be present. Check for: banner presence; "Reject All" / "Decline" option at equal visual prominence to "Accept All" (GDPR, PECR, CCPA requirement — CTA hierarchy inversion here is a 🚫 Blocker); granular consent categories (marketing, analytics, functional) rather than a single all-or-nothing toggle.
+  Code signal: absence of any consent-related class names (`cookie-banner`, `consent-`, `gdpr-`, `cmp-`) or `localStorage`/`sessionStorage` consent keys → 🚫 if cookies are clearly being set.
+  Korean: 쿠키 동의 배너 — "모두 거부" 버튼이 "모두 수락"과 동등한 시각적 비중을 가져야 함
+
+- [ ] **Subscription & auto-renewal disclosure** — Before a subscription purchase is confirmed, the following must be visible: renewal frequency, renewal amount, and cancellation method. A "free trial → paid" conversion must disclose the date and amount of the first charge before the user commits.
+  Code signal: checkout/payment form with no text matching renewal/billing cycle patterns near the CTA → 🟡 Warning.
+  Korean: 구독 자동 갱신 고지 — 결제 확인 전 갱신 주기, 금액, 취소 방법이 명시되어야 함
+
+- [ ] **Privacy at point of collection** — Forms collecting sensitive personal data (email, phone, DOB, national ID, payment, health, location) must include a visible "why we need this" note or a privacy policy link directly at the collection point — not just in the footer.
+  Code signal: `<input type="email/tel/date/number">` inside a form with no adjacent `<a href>` linking to a privacy policy and no inline explanation text → 🟡 Warning.
+  Korean: 수집 시점 개인정보 고지 — 민감 데이터 입력 필드 근처에 수집 목적 또는 개인정보처리방침 링크 필요
+
+- [ ] **Right of withdrawal / cancellation policy** — E-commerce and subscription checkout flows must link to a cancellation or returns policy before the final purchase confirmation. A "Buy Now" or "Confirm Order" CTA with no visible policy link nearby is non-compliant in EU/UK/many US states.
+  Code signal: final checkout CTA (`type="submit"`, "pay now", "confirm order" label patterns) with no adjacent link text matching "cancel", "return", "refund", "withdrawal" → 🟡 Warning.
+  Korean: 청약 철회 / 취소 정책 — 최종 결제 확인 버튼 근처에 취소·환불 정책 링크 필요
+
+- [ ] **Age gate for restricted content** — Products that could be accessed by minors but involve age-restricted content (alcohol, gambling, adult content, financial products in some jurisdictions) must present an age verification mechanism before access. A DOB picker or age confirmation checkbox that can be trivially bypassed (no backend verification) is a weak gate — flag as 🟡.
+  Code signal: presence of age-gated content indicators in route names / class names (`/adults-only`, `age-verify`, `18+`) without a corresponding gate component → 🔴 Critical.
+  Korean: 연령 제한 콘텐츠 연령 확인 — 연령 제한 콘텐츠 접근 전 연령 확인 절차 필요
+
+- [ ] **Accessibility legal baseline** — WCAG 2.1 AA is a legal requirement under: ADA / Section 508 (US), European Accessibility Act (EU — mandatory from June 2025), PSBAR (UK public sector), DDA (Australia), AODA (Canada). Any WCAG AA failure is therefore potentially a legal liability, not just a UX issue. Cat 6 Blocker-tier issues in this audit carry legal weight — do not treat them as optional fixes.
+  Note: if the product is a public-sector website (EU/UK) or a service covered by the EAA, all 🚫 Cat 6 Blockers are legal compliance failures.
+  Korean: 접근성 법적 기준 — WCAG 2.1 AA는 미국(ADA), EU(유럽 접근성법), 영국(PSBAR), 호주(DDA), 캐나다(AODA)에서 법적 의무 사항임
+
 **Before flagging any pattern:** Check the Ethical Persuasion reference in `references/ethics.md`. Do not flag legitimate persuasion techniques (genuine social proof, real urgency, positive progress framing, transparent anchoring).
 
 ---
@@ -2254,7 +2282,7 @@ or #E24B4A (regressed). Delta badge right-aligned.
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*Audit run with Design Auditor Skill v1.2.12 · [input type] · [confidence level]*
+*Audit run with Design Auditor Skill v1.2.13 · [input type] · [confidence level]*
 *Re-audit after fixes to track progress.*
 *수정 후 재감사를 실행하여 진행 상황을 추적하세요.*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2511,8 +2539,8 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
 - [positive 2]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*Generated by Design Auditor Skill v1.2.12*
-*Design Auditor Skill v1.2.12 생성*
+*Generated by Design Auditor Skill v1.2.13*
+*Design Auditor Skill v1.2.13 생성*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -2529,7 +2557,7 @@ If the user shares updated code or a new Figma link before selecting Re-audit:
   - `🟢 팁 — 마감 수준, 선택 사항` · *(팁 없으면 섹션 생략)*
   - `✅ 이미 올바른 항목`
 - Table column headers: `이슈` · `위치` · `수정 방법` · `법적 근거` · `정확한 값` · `속성` · `현재값` · `올바른 값` · `토큰` · `Figma 컴포넌트` · `코드 컴포넌트` · `상태`
-- Footer: `*Design Auditor Skill v1.2.12 생성*`
+- Footer: `*Design Auditor Skill v1.2.13 생성*`
 
 **If "Export report"** → create a downloadable `.md` file via file_create containing:
 - The full audit report in the Strict Output Template format
@@ -2556,7 +2584,7 @@ Content to include in the Canva doc:
   3. Issue summary table: 🚫 [N] Blockers · 🔴 [N] Critical · 🟡 [N] Warnings · 🟢 [N] Tips
   4. Top 3 critical issues with one-line fix each
   5. What's working well (2–3 positives)
-  6. Footer: "Generated by Design Auditor Skill v1.2.12"
+  6. Footer: "Generated by Design Auditor Skill v1.2.13"
 
 After generating:
   → Present the Canva design to the user
@@ -2660,8 +2688,8 @@ If Canva connector is unavailable:
 - [ ] [Question about loading state if this fetches data]
 
 ---
-*Generated by Design Auditor Skill v1.2.12 · Wireframe to Spec mode*
-*디자인 스펙 문서 · Design Auditor Skill v1.2.12 생성*
+*Generated by Design Auditor Skill v1.2.13 · Wireframe to Spec mode*
+*디자인 스펙 문서 · Design Auditor Skill v1.2.13 생성*
 *Values marked ~ are estimated. Confirm with designer before development.*
 *~ 표시 값은 추정치입니다. 개발 전 디자이너에게 확인하세요.*
 ```

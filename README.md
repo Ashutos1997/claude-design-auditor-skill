@@ -58,7 +58,7 @@ Drop in a Figma link, paste your CSS, upload a screenshot, or share a wireframe 
 | 15 | **Iconography** | Icon families, optical sizing, touch targets, meaning consistency |
 | 16 | **Navigation Patterns** | Tabs, breadcrumbs, back buttons, mobile nav, active states |
 | 17 | **Design Tokens & Variables** | Semantic naming, hardcoded values, dark mode token swapping |
-| 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, decoy pricing, manipulative anchoring, and 17 more manipulative patterns across 5 groups |
+| 18 | **Ethical Design & Dark Patterns** | Confirmshaming, false urgency, pre-checked consent, CTA hierarchy inversion, privacy zuckering, hidden costs, decoy pricing, manipulative anchoring, and 17 more manipulative patterns across 6 groups — including a Regulatory Compliance Baseline (cookie consent, subscription disclosure, privacy at collection, cancellation policy, age gates, accessibility legal status) |
 | 19 | **Nielsen's 10 Usability Heuristics Rules** | Nielsen's 10 Usability Heuristics are the most widely used framework for evaluating interface usability. They were developed by Jakob Nielsen and are grounded in decades of usability research |
 
 ---
@@ -169,6 +169,21 @@ design-auditor/
 ---
 
 ## Changelog
+
+### v1.2.13
+
+**Regulatory Compliance Baseline added to Cat 18.**
+
+**New: Regulatory Compliance Baseline (Cat 18 Group F)**
+6 cross-jurisdiction UI-detectable compliance checks — applicable across EU, US, UK, Canada, Brazil, Australia. 🚫 Blocker when a legal requirement is clearly absent, 🟡 Warning when ambiguous. Each includes a code signal and a caveat that this is a UI signal layer, not a legal audit. Full Korean translations throughout.
+- **Cookie & consent banner** — GDPR, PECR, CCPA: banner presence, Reject All at equal prominence to Accept All, granular consent categories
+- **Subscription & auto-renewal disclosure** — FTC, CMA, EU Consumer Rights: renewal frequency, amount, and cancellation method visible before confirmation
+- **Privacy at point of collection** — GDPR Art. 13, CCPA, PIPEDA: policy link or "why we need this" near sensitive input fields
+- **Right of withdrawal / cancellation policy** — EU CRD, UK CRA, FTC: policy link visible near final checkout CTA
+- **Age gate for restricted content** — COPPA, GDPR Art. 8, UK Age-Appropriate Design Code: verification mechanism before restricted content
+- **Accessibility legal baseline** — ADA/Section 508 (US), EAA (EU — mandatory June 2025), PSBAR (UK), DDA (Australia), AODA (Canada): Cat 6 Blockers carry legal weight
+
+------------------------------------------------------------------------------------------------------------------------------------------
 
 ### v1.2.12
 
